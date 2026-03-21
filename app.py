@@ -117,12 +117,23 @@ with tab1:
     with col2:
         blocks = sorted(list(set([c["block"] for c in cases])))
         block = st.selectbox("Block",["All"]+blocks)
+        mode_select = st.selectbox(
+            "Question Type",
+            ["All", "keyword", "scenario"]
+        )
     with col3:
         mode = st.selectbox("Difficulty",["adaptive","easy","medium","hard"])
 
     lang = "en" if language=="English" else "th"
 
     filtered = cases
+
+    if block != "All":
+        filtered = [c for c in filtered if c["block"] == block]
+    
+    # NEW: filter by mode
+    if mode_select != "All":
+        filtered = [c for c in filtered if c.get("mode", "scenario") == mode_select]
 
     if block!="All":
         filtered = [c for c in filtered if c["block"]==block]
@@ -144,8 +155,15 @@ with tab1:
     case = st.session_state.case
 
     st.subheader("Case")
-    st.write(case["scenario"][lang])
-    st.write(case["additional"][lang])
+    # ===== DISPLAY CASE =====
+    if case.get("mode") == "keyword":
+        st.markdown("### 🔑 Keywords")
+        st.write(case["scenario"][lang])
+    
+    else:
+        st.markdown("### 📋 Clinical Scenario")
+        st.write(case["scenario"][lang])
+        st.write(case.get("additional", {}).get(lang, ""))
 
     dx = st.text_input("Diagnosis")
     reasoning = st.text_area("Reasoning")
