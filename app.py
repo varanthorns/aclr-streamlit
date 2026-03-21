@@ -180,7 +180,18 @@ with tab1:
     if not filtered:
         filtered = cases
 
-    if "case" not in st.session_state:
+    current_filter = f"{block}_{difficulty}_{profession}"
+
+    if "last_filter" not in st.session_state:
+        st.session_state.last_filter = None
+    
+    # ถ้า filter เปลี่ยน → สุ่มใหม่
+    if st.session_state.last_filter != current_filter:
+        st.session_state.case = random.choice(filtered)
+        st.session_state.last_filter = current_filter
+    
+    # ปุ่มสุ่มใหม่
+    if st.button("New Case"):
         st.session_state.case = random.choice(filtered)
 
     if st.button("New Case"):
