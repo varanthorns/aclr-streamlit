@@ -1,219 +1,235 @@
-import streamlit as st
-import json, random, pandas as pd, time
-from datetime import datetime
-import numpy as np
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
-from sentence_transformers import SentenceTransformer, util
+[
+  {
+    "case_id": "ENDO_E_001",
+    "block": "Endocrine",
+    "mode": "scenario",
+    "difficulty": "easy",
+    "scenario": {
+      "en": "A 24-year-old woman presents with polyuria, polydipsia, and weight loss for 3 months.",
+      "th": "หญิง 24 ปี ปัสสาวะบ่อย กระหายน้ำ น้ำหนักลด"
+    },
+    "additional": {
+      "en": "Fasting glucose 260 mg/dL",
+      "th": "น้ำตาล 260"
+    },
+    "answer": "Diabetes mellitus",
+    "key_points": ["polyuria","polydipsia","weight loss"],
+    "task": {
+      "medicine": "What is the most likely diagnosis?",
+      "dentistry": "What oral manifestation may occur?",
+      "nursing": "What parameter should be monitored?",
+      "vet": "Analogous endocrine disorder?",
+      "pharmacy": "First-line drug?",
+      "public_health": "Main risk factor?",
+      "ams": "Confirmatory lab test?"
+    },
+    "interprofessional_answers": {
+      "medicine": "Diabetes mellitus",
+      "dentistry": "Periodontitis",
+      "nursing": "Blood glucose monitoring",
+      "vet": "Diabetes mellitus",
+      "pharmacy": "Metformin",
+      "public_health": "Obesity",
+      "ams": "HbA1c"
+    },
+    "reference": {
+      "source": "American Diabetes Association Standards of Care",
+      "year": 2024
+    }
+  },
 
-st.set_page_config(layout="wide")
+  {
+    "case_id": "ENDO_M_002",
+    "block": "Endocrine",
+    "mode": "scenario",
+    "difficulty": "medium",
+    "scenario": {
+      "en": "A 35-year-old woman presents with fatigue, weight gain, and cold intolerance.",
+      "th": "อ่อนเพลีย น้ำหนักขึ้น ทนหนาวไม่ได้"
+    },
+    "additional": {
+      "en": "TSH high, free T4 low",
+      "th": "TSH สูง T4 ต่ำ"
+    },
+    "answer": "Hypothyroidism",
+    "key_points": ["fatigue","weight gain","cold intolerance"],
+    "task": {
+      "medicine": "Diagnosis?",
+      "dentistry": "Oral finding?",
+      "nursing": "Key symptom monitoring?",
+      "vet": "Comparable disease?",
+      "pharmacy": "Drug?",
+      "public_health": "Risk?",
+      "ams": "Lab pattern?"
+    },
+    "interprofessional_answers": {
+      "medicine": "Hypothyroidism",
+      "dentistry": "Macroglossia",
+      "nursing": "Bradycardia",
+      "vet": "Hypothyroidism",
+      "pharmacy": "Levothyroxine",
+      "public_health": "Iodine deficiency",
+      "ams": "High TSH low T4"
+    },
+    "reference": {
+      "source": "American Thyroid Association Guidelines",
+      "year": 2023
+    }
+  },
 
-# ===================== LOAD =====================
-@st.cache_data
-def load_cases():
-    with open("cases.json","r",encoding="utf-8") as f:
-        return json.load(f)
+  {
+    "case_id": "CARDIO_H_003",
+    "block": "Cardiology",
+    "mode": "scenario",
+    "difficulty": "hard",
+    "scenario": {
+      "en": "A 62-year-old man presents with crushing chest pain radiating to the left arm for 30 minutes.",
+      "th": "เจ็บหน้าอกร้าวแขนซ้าย"
+    },
+    "additional": {
+      "en": "ECG shows ST elevation",
+      "th": "ST elevation"
+    },
+    "answer": "STEMI",
+    "key_points": ["chest pain","radiation","st elevation"],
+    "task": {
+      "medicine": "Diagnosis?",
+      "dentistry": "Precaution?",
+      "nursing": "Immediate action?",
+      "vet": "Analogous condition?",
+      "pharmacy": "Emergency drug?",
+      "public_health": "Major risk factor?",
+      "ams": "Key biomarker?"
+    },
+    "interprofessional_answers": {
+      "medicine": "STEMI",
+      "dentistry": "Avoid elective procedures",
+      "nursing": "Administer oxygen",
+      "vet": "Myocardial infarction",
+      "pharmacy": "Aspirin",
+      "public_health": "Smoking",
+      "ams": "Troponin"
+    },
+    "reference": {
+      "source": "ESC Acute Coronary Syndrome Guideline",
+      "year": 2023
+    }
+  },
 
-cases = load_cases()
+  {
+    "case_id": "NEURO_M_004",
+    "block": "Nervous system",
+    "mode": "scenario",
+    "difficulty": "medium",
+    "scenario": {
+      "en": "A 70-year-old man develops sudden right-sided weakness and slurred speech.",
+      "th": "อ่อนแรงครึ่งซีก พูดไม่ชัด"
+    },
+    "additional": {
+      "en": "Onset 1 hour ago",
+      "th": "1 ชั่วโมง"
+    },
+    "answer": "Ischemic stroke",
+    "key_points": ["weakness","speech","acute"],
+    "task": {
+      "medicine": "Diagnosis?",
+      "dentistry": "Risk consideration?",
+      "nursing": "Priority care?",
+      "vet": "Analog?",
+      "pharmacy": "Drug?",
+      "public_health": "Risk factor?",
+      "ams": "Imaging?"
+    },
+    "interprofessional_answers": {
+      "medicine": "Ischemic stroke",
+      "dentistry": "Aspiration risk",
+      "nursing": "Airway protection",
+      "vet": "Stroke",
+      "pharmacy": "tPA",
+      "public_health": "Hypertension",
+      "ams": "CT brain"
+    },
+    "reference": {
+      "source": "AHA Stroke Guideline",
+      "year": 2023
+    }
+  },
 
-@st.cache_resource
-def load_bert():
-    return SentenceTransformer("all-MiniLM-L6-v2")
+  {
+    "case_id": "GI_E_005",
+    "block": "GI",
+    "mode": "scenario",
+    "difficulty": "easy",
+    "scenario": {
+      "en": "A 40-year-old man has epigastric pain relieved by eating.",
+      "th": "ปวดลิ้นปี่ดีขึ้นเมื่อกิน"
+    },
+    "additional": {
+      "en": "Endoscopy shows duodenal ulcer",
+      "th": "พบแผล"
+    },
+    "answer": "Duodenal ulcer",
+    "key_points": ["epigastric pain"],
+    "task": {
+      "medicine": "Diagnosis?",
+      "dentistry": "Oral link?",
+      "nursing": "Monitor?",
+      "vet": "Analog?",
+      "pharmacy": "Drug?",
+      "public_health": "Risk?",
+      "ams": "Test?"
+    },
+    "interprofessional_answers": {
+      "medicine": "Duodenal ulcer",
+      "dentistry": "Acid erosion",
+      "nursing": "Bleeding",
+      "vet": "Ulcer disease",
+      "pharmacy": "PPI",
+      "public_health": "NSAIDs",
+      "ams": "H. pylori test"
+    },
+    "reference": {
+      "source": "ACG Peptic Ulcer Guideline",
+      "year": 2022
+    }
+  },
 
-bert_model = load_bert()
-
-# ===================== UTILS =====================
-def normalize(t): return str(t).lower().strip()
-
-def semantic_score(a,b):
-    try:
-        vec = TfidfVectorizer().fit_transform([a,b])
-        return cosine_similarity(vec[0:1], vec[1:2])[0][0]
-    except:
-        return 0
-
-def bert_similarity(a,b):
-    try:
-        emb1 = bert_model.encode(a, convert_to_tensor=True)
-        emb2 = bert_model.encode(b, convert_to_tensor=True)
-        return float(util.cos_sim(emb1, emb2))
-    except:
-        return 0
-
-# ===================== DECISION =====================
-def extract_steps(reasoning):
-    keys = ["because","therefore","thus","so","เนื่องจาก","ดังนั้น"]
-    return [s for s in reasoning.split(".") if any(k in s.lower() for k in keys)]
-
-# ===================== SCORING =====================
-def evaluate(dx, reasoning, case, profession):
-
-    target = case.get("interprofessional_answers",{}).get(profession, case["answer"])
-
-    sim = semantic_score(dx, target)
-
-    if normalize(dx) == normalize(target):
-        dx_score = 5
-    elif sim > 0.6:
-        dx_score = 3
-    else:
-        dx_score = 0
-
-    key_text = " ".join(case.get("key_points",[]))
-    r_sim = bert_similarity(reasoning, key_text)
-
-    if r_sim > 0.75:
-        r_score = 5
-    elif r_sim > 0.55:
-        r_score = 3
-    else:
-        r_score = 1
-
-    steps = extract_steps(reasoning)
-    d_score = min(3,len(steps))
-
-    total = min(10, dx_score + r_score + d_score)
-
-    return total, dx_score, r_score, d_score, target, r_sim
-
-# ===================== WEAKNESS AI =====================
-def analyze_weakness(df, user):
-
-    user_df = df[df["user"]==user]
-
-    if len(user_df)<5:
-        return "Not enough data"
-
-    weak_block = user_df.groupby("block")["score"].mean().idxmin()
-    weak_prof = user_df.groupby("profession")["score"].mean().idxmin()
-
-    return f"Weakest Block: {weak_block} | Weakest Role: {weak_prof}"
-
-# ===================== SESSION =====================
-if "difficulty" not in st.session_state:
-    st.session_state.difficulty = "easy"
-
-# ===================== UI =====================
-st.title("🔥 AI Healthcare Education Platform")
-
-user = st.text_input("Enter Name", key="user")
-if not user:
-    st.stop()
-
-tab1,tab2,tab3,tab4 = st.tabs(["🧠 Practice","⏱ OSCE","⚔️ Battle","📊 Analytics"])
-
-# ==================================================
-# 🧠 PRACTICE
-# ==================================================
-with tab1:
-
-    col1,col2,col3 = st.columns(3)
-
-    with col1:
-        block = st.selectbox("Block",["All"]+list(set(c["block"] for c in cases)), key="block")
-    with col2:
-        difficulty = st.selectbox("Difficulty",["easy","medium","hard"], key="diff")
-    with col3:
-        profession = st.selectbox(
-            "Profession",
-            ["medicine","dentistry","nursing","vet","pharmacy","public_health","ams"],
-            key="prof"
-        )
-
-    filtered = [c for c in cases if (block=="All" or c["block"]==block) and c["difficulty"]==difficulty]
-
-    if not filtered:
-        st.warning("No cases")
-        st.stop()
-
-    case = random.choice(filtered)
-
-    st.markdown("### 📋 Case")
-    st.write(case["scenario"]["en"])
-
-    dx = st.text_input("Answer", key="dx1")
-    reasoning = st.text_area("Reasoning", key="rs1")
-
-    if st.button("Submit", key="sub1"):
-
-        total, dx_s, r_s, d_s, target, sim = evaluate(dx, reasoning, case, profession)
-
-        st.success(f"Score: {total}/10")
-        st.write("Correct:", target)
-
-# ==================================================
-# ⏱ OSCE MODE
-# ==================================================
-with tab2:
-
-    st.markdown("## ⏱ OSCE Mode (Timed)")
-
-    duration = st.slider("Time (sec)",30,180,60)
-
-    if st.button("Start OSCE", key="osce_start"):
-        st.session_state.start = time.time()
-
-    if "start" in st.session_state:
-        remaining = duration - int(time.time()-st.session_state.start)
-        st.write(f"Time left: {remaining}s")
-
-        if remaining <= 0:
-            st.error("⏰ Time up!")
-        else:
-            case = random.choice(cases)
-            st.write(case["scenario"]["en"])
-
-            dx = st.text_input("Answer", key="osce_dx")
-            reasoning = st.text_area("Reasoning", key="osce_rs")
-
-            if st.button("Submit OSCE", key="osce_submit"):
-                total, *_ = evaluate(dx, reasoning, case, "medicine")
-                st.success(f"Score: {total}")
-
-# ==================================================
-# ⚔️ TEAM BATTLE
-# ==================================================
-with tab3:
-
-    st.markdown("## ⚔️ Team Battle")
-
-    players = st.text_area("Enter players (comma separated)", key="players")
-    
-    if players:
-        players = [p.strip() for p in players.split(",")]
-
-        case = random.choice(cases)
-        st.write(case["scenario"]["en"])
-
-        scores = {}
-
-        for p in players:
-            dx = st.text_input(f"{p} Diagnosis", key=f"{p}_dx")
-            rs = st.text_area(f"{p} Reasoning", key=f"{p}_rs")
-
-            if st.button(f"Submit {p}", key=f"{p}_btn"):
-                total, *_ = evaluate(dx, rs, case, "medicine")
-                scores[p] = total
-
-        if scores:
-            st.write("🏆 Results")
-            st.write(sorted(scores.items(), key=lambda x: x[1], reverse=True))
-
-# ==================================================
-# 📊 ANALYTICS + WEAKNESS AI
-# ==================================================
-with tab4:
-
-    try:
-        df = pd.read_csv("responses.csv")
-
-        st.line_chart(df["score"])
-
-        st.markdown("## 🧠 Weakness AI")
-        st.warning(analyze_weakness(df, user))
-
-        st.bar_chart(df.groupby("block")["score"].mean())
-        st.bar_chart(df.groupby("profession")["score"].mean())
-
-    except:
-        st.info("No data yet")
+  {
+    "case_id": "HEMA_H_006",
+    "block": "Hematology",
+    "mode": "scenario",
+    "difficulty": "hard",
+    "scenario": {
+      "en": "A patient presents with fatigue, fever, and petechiae.",
+      "th": "อ่อนเพลีย มีไข้ จุดเลือดออก"
+    },
+    "additional": {
+      "en": "Bone marrow shows blasts",
+      "th": "พบ blast"
+    },
+    "answer": "Acute leukemia",
+    "key_points": ["petechiae","blasts","fatigue"],
+    "task": {
+      "medicine": "Diagnosis?",
+      "dentistry": "Oral sign?",
+      "nursing": "Priority?",
+      "vet": "Analog?",
+      "pharmacy": "Drug class?",
+      "public_health": "Risk?",
+      "ams": "Lab finding?"
+    },
+    "interprofessional_answers": {
+      "medicine": "Acute leukemia",
+      "dentistry": "Gingival bleeding",
+      "nursing": "Infection control",
+      "vet": "Leukemia",
+      "pharmacy": "Chemotherapy",
+      "public_health": "Radiation",
+      "ams": "Blast cells"
+    },
+    "reference": {
+      "source": "NCCN Leukemia Guidelines",
+      "year": 2024
+    }
+  }
+]
