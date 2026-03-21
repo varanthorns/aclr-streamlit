@@ -1,53 +1,4 @@
-import streamlit as st
-import json, random, pandas as pd
-from datetime import datetime
-import numpy as np
-from scipy import stats
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
 
-st.set_page_config(layout="wide")
-
-# ===================== LOAD =====================
-@st.cache_data
-def load_cases():
-    with open("cases.json","r",encoding="utf-8") as f:
-        return json.load(f)
-
-cases = load_cases()
-
-# ===================== UTILS =====================
-def normalize(t): return str(t).lower().strip()
-
-def semantic_score(a,b):
-    try:
-        vec = TfidfVectorizer().fit_transform([a,b])
-        return cosine_similarity(vec[0:1], vec[1:2])[0][0]
-    except:
-        return 0
-
-# ===================== SCORING =====================
-def evaluate(dx, reasoning, case):
-
-    # ===== Diagnosis =====
-    sim = semantic_score(dx, case["answer"])
-    
-    if normalize(dx) == normalize(case["answer"]):
-        dx_score = 5
-        dx_level = "correct"
-    elif sim > 0.65:
-        dx_score = 3
-        dx_level = "close"
-    else:
-        dx_score = 0
-        dx_level = "wrong"
-
-    # ===== Reasoning =====
-    r_score = 0
-    used = []
-    
-    for k in case.get("key_points", []):
-        if k.lower() in reasoning.lower():
             r_score += 1
             used.append(k)
 
@@ -126,6 +77,206 @@ def adjust(score):
     elif avg >= 5:
         return "medium"
     return "easy"
+
+# ===== NEW: BERT =====
+from sentence_transformers import SentenceTransformer, util
+
+st.set_page_config(layout="wide")
+
+# ===================== LOAD =====================
+@st.cache_data
+def load_cases():
+    with open("cases.json","r",encoding="utf-8") as f:
+        return json.load(f)
+
+cases = load_cases()
+
+# ===================== LOAD BERT =====================
+@st.cache_resource
+def load_bert():
+    return SentenceTransformer("all-MiniLM-L6-v2")
+
+bert_model = load_bert()
+
+# ===================== UTILS =====================
+def normalize(t): return str(t).lower().strip()
+
+def semantic_score(a,b):
+    try:
+        vec = TfidfVectorizer().fit_transform([a,b])
+        return cosine_similarity(vec[0:1], vec[1:2])[0][0]
+    except:
+        return 0
+
+# ===== NEW: BERT SEMANTIC =====
+def bert_similarity(a, b):
+    try:
+        emb1 = bert_model.encode(a, convert_to_tensor=True)
+        emb2 = bert_model.encode(b, convert_to_tensor=True)
+        return float(util.cos_sim(emb1, emb2))
+    except:
+        return 0
+
+# ===================== ORIGINAL SCORING =====================
+def evaluate(dx, reasoning, case):
+
+    sim = semantic_score(dx, case["answer"])
+    
+    if normalize(dx) == normalize(case["answer"]):
+        dx_score = 5
+        dx_level = "correct"
+    elif sim > 0.65:
+        dx_score = 3
+        dx_level = "close"
+    else:
+        dx_score = 0
+        dx_level = "wrong"
+
+    r_score = 0
+    used = []
+    
+    for k in case.get("key_points", []):
+        if k.lower() in reasoning.lower():
+            r_score += 1
+            used.append(k)
+
+    if "because" in reasoning.lower() or "ดังนั้น" in reasoning:
+        r_score += 1
+
+    if len(reasoning.split()) > 20:
+        r_score += 1
+
+    r_score = min(5, r_score)
+    total = dx_score + r_score
+
+    feedback = case.get("examiner_feedback","")
+
+    return dx_score, r_score, total, sim, used, feedback
+
+# ===================== NEW: BERT GRADING =====================
+def bert_grade(reasoning, case):
+
+    key_text = " ".join(case.get("key_points", []))
+    sim = bert_similarity(reasoning, key_text)
+
+    if sim > 0.75:
+        score = 5
+        level = "excellent"
+    elif sim > 0.55:
+        score = 3
+        level = "moderate"
+    else:
+        score = 1
+        level = "poor"
+
+    return score, sim, level
+
+# ===================== NEW: UWorld Reasoning =====================
+def uworld_feedback(case):
+
+    return f"""
+### 🧠 Step 1: Key Clinical Clues
+- {", ".join(case.get("key_points", []))}
+
+### 🔍 Step 2: Interpretation
+These findings suggest **{case["answer"]}**
+
+### ⚖️ Step 3: Why not others?
+Incorrect options are ruled out based on missing key features.
+
+### 🎯 Step 4: Final Diagnosis
+**{case["answer"]}**
+
+### 📚 Concept Summary
+{case.get("learning_objective","")}
+"""
+
+# ===================== STATS =====================
+def compute_stats(df):
+
+    results = {}
+
+    scores = df["score"].values
+    results["mean"] = np.mean(scores)
+    results["sd"] = np.std(scores)
+
+    return results
+
+# ===================== UI =====================
+st.title("🔥 AI Clinical Reasoning Platform (BERT + UWorld)")
+
+user_id = st.text_input("Enter User ID")
+
+if not user_id:
+    st.stop()
+
+block = st.selectbox("Block", ["All"] + list(set(c["block"] for c in cases)))
+difficulty = st.selectbox("Difficulty", ["adaptive","easy","medium","hard"])
+
+filtered = cases
+
+if block != "All":
+    filtered = [c for c in filtered if c["block"] == block]
+
+case = random.choice(filtered)
+
+st.subheader("📋 Clinical Case")
+st.write(case["scenario"]["en"])
+
+dx = st.text_input("Diagnosis")
+reasoning = st.text_area("Clinical Reasoning")
+
+if st.button("Submit"):
+
+    dx_s, r_s, total, sim, used, fb = evaluate(dx, reasoning, case)
+
+    # ===== NEW BERT =====
+    bert_s, bert_sim, level = bert_grade(reasoning, case)
+
+    final_score = dx_s + bert_s
+
+    st.success(f"Total Score: {final_score}/10")
+
+    st.write("Diagnosis Score:", dx_s)
+    st.write("BERT Reasoning Score:", bert_s)
+    st.write("BERT Similarity:", round(bert_sim,2))
+
+    st.markdown("### 🧠 AI Examiner Feedback")
+    st.info(fb)
+
+    st.markdown("### 📊 NLP Evaluation")
+    st.write(f"Reasoning quality: {level}")
+
+    st.markdown("### 🧠 UWorld Explanation")
+    st.markdown(uworld_feedback(case))
+
+    st.markdown("### 📖 Reference")
+    st.write(case["reference"]["source"], case["reference"]["year"])
+
+    # SAVE
+    row = {
+        "user": user_id,
+        "score": final_score,
+        "time": datetime.now()
+    }
+
+    df = pd.DataFrame([row])
+
+    try:
+        old = pd.read_csv("responses.csv")
+        df = pd.concat([old, df])
+    except:
+        pass
+
+    df.to_csv("responses.csv", index=False)
+
+# ===================== ANALYTICS =====================
+try:
+    df = pd.read_csv("responses.csv")
+    st.subheader("📈 Performance")
+    st.line_chart(df["score"])
+except:
+    pass
 
 # ===================== UI =====================
 st.title("🧠 ACLR Platform (AI Clinical Learning & Reasoning)")
