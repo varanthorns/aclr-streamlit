@@ -1,219 +1,234 @@
 [
   {
-    "case_id": "IPE_CVS_001",
-    "block": "Cardiovascular",
-    "mode": "scenario",
-    "difficulty": "medium",
-    "level": "clinical",
-
-    "scenario": {
-      "en": "A 58-year-old man presents to the emergency department with sudden onset crushing chest pain radiating to the left arm. He appears diaphoretic and anxious. His blood pressure is 90/60 mmHg, pulse 110 bpm. ECG shows ST elevation in leads II, III, and aVF.",
-      "th": "ชายอายุ 58 ปี มาด้วยอาการเจ็บหน้าอกรุนแรงร้าวไปแขนซ้าย เหงื่อออก ตัวเย็น ความดันต่ำ ECG พบ ST elevation"
-    },
-
-    "additional": {
-      "en": "Troponin elevated. Risk factors include hypertension and smoking.",
-      "th": "Troponin สูง มีประวัติความดันและสูบบุหรี่"
-    },
-
-    "answer": "Myocardial infarction",
-
-    "options": [
-      "Myocardial infarction",
-      "Angina",
-      "Aortic dissection",
-      "Pericarditis"
-    ],
-
-    "key_points": [
-      "chest pain",
-      "st elevation",
-      "troponin",
-      "hypotension"
-    ],
-
-    "profession_focus": [
-      "medicine",
-      "nursing",
-      "pharmacy",
-      "lab",
-      "public_health",
-      "physio",
-      "dentistry"
-    ],
-
-    "task": {
-      "medicine": "What is the most likely diagnosis?",
-      "nursing": "What is the priority nursing intervention?",
-      "pharmacy": "What is the most appropriate initial medication?",
-      "lab": "What test confirms the diagnosis?",
-      "public_health": "What is the most important modifiable risk factor?",
-      "physio": "What is the next step after stabilization?",
-      "dentistry": "What is the key precaution before dental procedure?"
-    },
-
-    "interprofessional_answers": {
-      "medicine": "Myocardial infarction",
-      "nursing": "Administer oxygen and monitor vitals",
-      "pharmacy": "Aspirin",
-      "lab": "Troponin",
-      "public_health": "Smoking cessation",
-      "physio": "Cardiac rehabilitation",
-      "dentistry": "Avoid elective procedure"
-    },
-
-    "learning_objective": "Recognize acute coronary syndrome and understand multidisciplinary management",
-
-    "explanation": "ST elevation with chest pain and elevated troponin indicates myocardial infarction. Immediate management includes MONA protocol and stabilization.",
-
-    "reference": {
-      "source": "ESC Guidelines for Acute Coronary Syndromes",
-      "year": 2023
-    }
-  },
-
-  {
-    "case_id": "IPE_ENDO_002",
+    "case_id": "ENDO_E_001",
     "block": "Endocrine",
     "mode": "scenario",
     "difficulty": "easy",
     "level": "preclinical",
 
     "scenario": {
-      "en": "A 45-year-old woman presents with fatigue, weight gain, and cold intolerance. Physical examination reveals dry skin and bradycardia.",
-      "th": "หญิงอายุ 45 ปี อ่อนเพลีย น้ำหนักขึ้น หนาวง่าย ผิวแห้ง ชีพจรช้า"
+      "en": "A 25-year-old woman presents with polyuria, polydipsia, and weight loss over 2 months.",
+      "th": "หญิงอายุ 25 ปี ปัสสาวะบ่อย กระหายน้ำ น้ำหนักลด"
     },
 
     "additional": {
-      "en": "TSH elevated, T4 low.",
-      "th": "TSH สูง T4 ต่ำ"
+      "en": "Fasting glucose 250 mg/dL",
+      "th": "น้ำตาล 250"
     },
 
-    "answer": "Hypothyroidism",
+    "answer": "Diabetes mellitus",
 
-    "options": [
-      "Hypothyroidism",
-      "Hyperthyroidism",
-      "Cushing syndrome",
-      "Addison disease"
-    ],
-
-    "key_points": [
-      "fatigue",
-      "weight gain",
-      "cold intolerance",
-      "high tsh"
-    ],
-
-    "profession_focus": [
-      "medicine",
-      "nursing",
-      "pharmacy",
-      "lab",
-      "public_health",
-      "physio",
-      "dentistry"
-    ],
+    "key_points": ["polyuria","polydipsia","weight loss"],
 
     "task": {
       "medicine": "What is the diagnosis?",
-      "nursing": "What symptom should be monitored?",
-      "pharmacy": "What is first-line treatment?",
-      "lab": "What lab confirms diagnosis?",
-      "public_health": "What population is at risk?",
-      "physio": "What functional issue may occur?",
-      "dentistry": "What oral sign may be seen?"
+      "nursing": "What should be monitored?",
+      "pharmacy": "First-line medication?",
+      "lab": "Confirmatory test?",
+      "public_health": "Main risk factor?",
+      "physio": "Complication affecting mobility?",
+      "dentistry": "Oral manifestation?"
     },
 
     "interprofessional_answers": {
-      "medicine": "Hypothyroidism",
-      "nursing": "Monitor fatigue",
-      "pharmacy": "Levothyroxine",
-      "lab": "TSH",
-      "public_health": "Women",
-      "physio": "Reduced mobility",
-      "dentistry": "Macroglossia"
+      "medicine": "Diabetes mellitus",
+      "nursing": "Monitor glucose",
+      "pharmacy": "Metformin",
+      "lab": "HbA1c",
+      "public_health": "Obesity",
+      "physio": "Neuropathy",
+      "dentistry": "Periodontitis"
     },
 
-    "learning_objective": "Identify hypothyroidism and its systemic effects",
-
-    "explanation": "High TSH with low T4 confirms hypothyroidism. Symptoms include fatigue, weight gain, and cold intolerance.",
-
     "reference": {
-      "source": "American Thyroid Association Guidelines",
-      "year": 2022
+      "source": "ADA Diabetes Guidelines",
+      "year": 2024
     }
   },
 
   {
-    "case_id": "IPE_INF_003",
-    "block": "Infectious Disease",
+    "case_id": "ENDO_H_002",
+    "block": "Endocrine",
     "mode": "scenario",
-    "difficulty": "medium",
+    "difficulty": "hard",
     "level": "clinical",
 
     "scenario": {
-      "en": "A 23-year-old male presents with fever, productive cough, and rust-colored sputum. On examination, crackles are heard in the right lower lung field.",
-      "th": "ชายอายุ 23 ปี มีไข้ ไอ เสมหะสีสนิม ตรวจพบเสียง crackles"
+      "en": "A 40-year-old woman presents with weight gain, moon face, and hypertension.",
+      "th": "หญิงน้ำหนักขึ้น หน้า moon face ความดันสูง"
     },
 
     "additional": {
-      "en": "Chest X-ray shows lobar consolidation.",
-      "th": "X-ray พบ consolidation"
+      "en": "High cortisol, low ACTH",
+      "th": "cortisol สูง ACTH ต่ำ"
     },
 
-    "answer": "Streptococcus pneumoniae",
+    "answer": "Cushing syndrome",
 
-    "options": [
-      "Streptococcus pneumoniae",
-      "Klebsiella",
-      "Staphylococcus aureus",
-      "Tuberculosis"
-    ],
-
-    "key_points": [
-      "rust sputum",
-      "lobar pneumonia",
-      "fever"
-    ],
-
-    "profession_focus": [
-      "medicine",
-      "nursing",
-      "pharmacy",
-      "lab",
-      "public_health",
-      "physio",
-      "dentistry"
-    ],
+    "key_points": ["moon face","hypertension","cortisol"],
 
     "task": {
-      "medicine": "What is the causative organism?",
-      "nursing": "What is the priority care?",
-      "pharmacy": "What antibiotic is first line?",
-      "lab": "What test confirms organism?",
-      "public_health": "What prevention method?",
-      "physio": "What therapy helps recovery?",
-      "dentistry": "What oral risk factor relates?"
+      "medicine": "Diagnosis?",
+      "nursing": "Monitor complication?",
+      "pharmacy": "Drug?",
+      "lab": "Test?",
+      "public_health": "Risk?",
+      "physio": "Mobility issue?",
+      "dentistry": "Oral issue?"
     },
 
     "interprofessional_answers": {
-      "medicine": "Streptococcus pneumoniae",
-      "nursing": "Maintain airway",
-      "pharmacy": "Amoxicillin",
-      "lab": "Sputum culture",
-      "public_health": "Vaccination",
-      "physio": "Chest physiotherapy",
-      "dentistry": "Poor oral hygiene"
+      "medicine": "Cushing syndrome",
+      "nursing": "Monitor BP",
+      "pharmacy": "Ketoconazole",
+      "lab": "Dexamethasone test",
+      "public_health": "Steroid use",
+      "physio": "Muscle weakness",
+      "dentistry": "Delayed healing"
     },
 
-    "learning_objective": "Understand community-acquired pneumonia and multidisciplinary care",
+    "reference": {
+      "source": "Endocrine Society Guideline",
+      "year": 2023
+    }
+  },
 
-    "explanation": "Rust-colored sputum and lobar consolidation suggest pneumococcal pneumonia.",
+  {
+    "case_id": "CARDIO_M_003",
+    "block": "Cardiology",
+    "mode": "scenario",
+    "difficulty": "medium",
+
+    "scenario": {
+      "en": "A 60-year-old man presents with chest pain on exertion relieved by rest.",
+      "th": "เจ็บหน้าอกเวลาออกแรง ดีขึ้นเมื่อพัก"
+    },
+
+    "additional": {
+      "en": "Normal troponin",
+      "th": "troponin ปกติ"
+    },
+
+    "answer": "Stable angina",
+
+    "key_points": ["exertion","relieved by rest"],
+
+    "task": {
+      "medicine": "Diagnosis?",
+      "nursing": "Monitor?",
+      "pharmacy": "Drug?",
+      "lab": "Test?",
+      "public_health": "Risk?",
+      "physio": "Rehab?",
+      "dentistry": "Precaution?"
+    },
+
+    "interprofessional_answers": {
+      "medicine": "Stable angina",
+      "nursing": "Monitor pain",
+      "pharmacy": "Nitroglycerin",
+      "lab": "ECG",
+      "public_health": "Smoking",
+      "physio": "Exercise",
+      "dentistry": "Avoid stress"
+    },
 
     "reference": {
-      "source": "IDSA Community-Acquired Pneumonia Guidelines",
-      "year": 2019
+      "source": "ESC Guidelines",
+      "year": 2023
+    }
+  },
+
+  {
+    "case_id": "NEURO_E_004",
+    "block": "Nervous system",
+    "mode": "scenario",
+    "difficulty": "easy",
+
+    "scenario": {
+      "en": "A patient presents with sudden facial droop and weakness.",
+      "th": "หน้าเบี้ยว อ่อนแรงทันที"
+    },
+
+    "additional": {
+      "en": "Onset <1 hr",
+      "th": "เกิด <1 ชม."
+    },
+
+    "answer": "Stroke",
+
+    "key_points": ["facial droop","weakness"],
+
+    "task": {
+      "medicine": "Diagnosis?",
+      "nursing": "Priority?",
+      "pharmacy": "Drug?",
+      "lab": "Test?",
+      "public_health": "Risk?",
+      "physio": "Rehab?",
+      "dentistry": "Precaution?"
+    },
+
+    "interprofessional_answers": {
+      "medicine": "Stroke",
+      "nursing": "Airway",
+      "pharmacy": "tPA",
+      "lab": "CT brain",
+      "public_health": "Hypertension",
+      "physio": "Rehab",
+      "dentistry": "Aspiration risk"
+    },
+
+    "reference": {
+      "source": "AHA Stroke Guideline",
+      "year": 2023
+    }
+  },
+
+  {
+    "case_id": "GI_M_005",
+    "block": "GI",
+    "mode": "scenario",
+    "difficulty": "medium",
+
+    "scenario": {
+      "en": "Epigastric pain relieved by food.",
+      "th": "ปวดลิ้นปี่ดีขึ้นเมื่อกิน"
+    },
+
+    "additional": {
+      "en": "Endoscopy shows ulcer",
+      "th": "พบแผล"
+    },
+
+    "answer": "Duodenal ulcer",
+
+    "key_points": ["epigastric pain"],
+
+    "task": {
+      "medicine": "Diagnosis?",
+      "nursing": "Monitor?",
+      "pharmacy": "Drug?",
+      "lab": "Test?",
+      "public_health": "Risk?",
+      "physio": "Effect?",
+      "dentistry": "Oral relation?"
+    },
+
+    "interprofessional_answers": {
+      "medicine": "Duodenal ulcer",
+      "nursing": "Bleeding",
+      "pharmacy": "PPI",
+      "lab": "H pylori test",
+      "public_health": "NSAID",
+      "physio": "Pain",
+      "dentistry": "Acid reflux"
+    },
+
+    "reference": {
+      "source": "ACG Guideline",
+      "year": 2022
     }
   }
+
 ]
