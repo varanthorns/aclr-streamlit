@@ -4,83 +4,79 @@
     "block": "Endocrine",
     "mode": "keyword",
     "difficulty": "easy",
-    "scenario": {"en": "Polyuria, polydipsia, weight loss","th": "ปัสสาวะบ่อย กระหายน้ำ น้ำหนักลด"},
+    "level": "clinical",
+    "scenario": {"en": "Polyuria, polydipsia, weight loss", "th": "ปัสสาวะบ่อย กระหายน้ำ น้ำหนักลด"},
     "additional": {"en": "", "th": ""},
-    "answer": "Diabetes mellitus",
     "options": ["Diabetes mellitus","Diabetes insipidus","Cushing syndrome","Addison disease"],
-    "key_points": ["polyuria","polydipsia","weight loss"]
+    "answer": "Diabetes mellitus",
+    "key_points": ["polyuria","polydipsia","weight loss"],
+    "explanation": "Classic symptoms of hyperglycemia indicate diabetes mellitus.",
+    "learning_objective": "Recognize classic triad of diabetes",
+    "reference": {"source": "ADA Standards of Care", "year": "2025", "note": "Diagnosis of diabetes"}
   },
 
   {
-    "case_id": "ENDO_M_002",
-    "block": "Endocrine",
-    "mode": "scenario",
-    "difficulty": "medium",
-    "scenario": {"en": "Fatigue, weight gain, cold intolerance","th": "อ่อนเพลีย น้ำหนักเพิ่ม ทนหนาวไม่ได้"},
-    "additional": {"en": "TSH high, T4 low","th": "TSH สูง T4 ต่ำ"},
-    "answer": "Hypothyroidism",
-    "options": ["Hypothyroidism","Hyperthyroidism","Cushing syndrome","PCOS"],
-    "key_points": ["fatigue","weight gain","cold intolerance"]
-  },
-
-  {
-    "case_id": "CARDIO_H_001",
-    "block": "Cardiology",
+    "case_id": "CVS_H_002",
+    "block": "CVS",
     "mode": "scenario",
     "difficulty": "hard",
-    "scenario": {"en": "Crushing chest pain radiating to arm","th": "เจ็บหน้าอกร้าวแขน"},
-    "additional": {"en": "ST elevation","th": "ST elevation"},
-    "answer": "Myocardial infarction",
-    "options": ["Myocardial infarction","Angina","Pericarditis","Aortic dissection"],
-    "key_points": ["chest pain","radiation","st elevation"]
+    "level": "clinical",
+    "scenario": {"en": "Severe chest pain radiating to left arm with sweating", "th": "เจ็บหน้าอกร้าวแขนซ้าย เหงื่อออก"},
+    "additional": {"en": "ST elevation in II, III, aVF", "th": ""},
+    "options": ["STEMI","NSTEMI","Pericarditis","Aortic dissection"],
+    "answer": "STEMI",
+    "key_points": ["chest pain","radiation","ST elevation"],
+    "explanation": "ST elevation with classic symptoms indicates myocardial infarction.",
+    "learning_objective": "Identify STEMI from ECG and symptoms",
+    "reference": {"source": "ESC Guidelines ACS", "year": "2023-2025", "note": "STEMI criteria"}
   },
 
   {
-    "case_id": "NEURO_E_002",
+    "case_id": "NEURO_E_003",
     "block": "Nervous system",
     "mode": "keyword",
     "difficulty": "easy",
-    "scenario": {"en": "Facial droop, weakness","th": "หน้าเบี้ยว อ่อนแรง"},
+    "level": "clinical",
+    "scenario": {"en": "Facial droop, arm weakness", "th": "หน้าเบี้ยว แขนอ่อนแรง"},
     "additional": {"en": "", "th": ""},
+    "options": ["Stroke","Bell palsy","Seizure","Migraine"],
     "answer": "Stroke",
-    "options": ["Stroke","Bell palsy","Migraine","Seizure"],
-    "key_points": ["weakness","facial droop"]
+    "key_points": ["weakness","facial droop"],
+    "explanation": "Acute neurological deficit suggests stroke.",
+    "learning_objective": "Recognize stroke symptoms",
+    "reference": {"source": "AHA Stroke Guideline", "year": "2024", "note": "Stroke recognition"}
   },
 
   {
-    "case_id": "GI_M_003",
+    "case_id": "GI_M_004",
     "block": "GI",
     "mode": "scenario",
     "difficulty": "medium",
-    "scenario": {"en": "Epigastric pain relieved by food","th": "ปวดลิ้นปี่ดีขึ้นเมื่อกิน"},
-    "additional": {"en": "Duodenal ulcer","th": "แผล duodenum"},
-    "answer": "Duodenal ulcer",
+    "level": "clinical",
+    "scenario": {"en": "Epigastric pain relieved by food", "th": "ปวดลิ้นปี่ดีขึ้นเมื่อกิน"},
+    "additional": {"en": "", "th": ""},
     "options": ["Duodenal ulcer","Gastric ulcer","GERD","Pancreatitis"],
-    "key_points": ["epigastric pain"]
+    "answer": "Duodenal ulcer",
+    "key_points": ["epigastric pain"],
+    "explanation": "Pain relieved by food suggests duodenal ulcer.",
+    "learning_objective": "Differentiate peptic ulcer types",
+    "reference": {"source": "ACG Guideline", "year": "2024", "note": "Peptic ulcer disease"}
   },
 
   {
-    "case_id": "HEMA_H_004",
+    "case_id": "HEMA_H_005",
     "block": "Hematology",
     "mode": "scenario",
     "difficulty": "hard",
-    "scenario": {"en": "Fatigue, petechiae","th": "อ่อนเพลีย จุดเลือดออก"},
-    "additional": {"en": "Blasts in marrow","th": "พบ blast"},
-    "answer": "Acute leukemia",
-    "options": ["Acute leukemia","Anemia","ITP","DIC"],
-    "key_points": ["petechiae","blasts"]
-  },
-
-  {
-    "case_id": "MICRO_E_005",
-    "block": "Microbiology",
-    "mode": "keyword",
-    "difficulty": "easy",
-    "scenario": {"en": "Rust sputum pneumonia","th": "เสมหะสีสนิม"},
+    "level": "clinical",
+    "scenario": {"en": "Fatigue, bleeding, blasts in bone marrow", "th": ""},
     "additional": {"en": "", "th": ""},
-    "answer": "Streptococcus pneumoniae",
-    "options": ["Streptococcus pneumoniae","Klebsiella","Staph aureus","TB"],
-    "key_points": ["rust sputum"]
+    "options": ["Acute leukemia","Anemia","ITP","DIC"],
+    "answer": "Acute leukemia",
+    "key_points": ["blasts","bleeding"],
+    "explanation": "Presence of blasts confirms acute leukemia.",
+    "learning_objective": "Recognize leukemia features",
+    "reference": {"source": "WHO Classification", "year": "2022-2024", "note": "Hematologic malignancy"}
   },
 
   {
@@ -88,23 +84,31 @@
     "block": "Immunology",
     "mode": "scenario",
     "difficulty": "medium",
-    "scenario": {"en": "Allergic rash after drug","th": "แพ้ยา"},
-    "additional": {"en": "IgE","th": "IgE"},
+    "level": "preclinical",
+    "scenario": {"en": "Immediate allergic reaction with IgE", "th": ""},
+    "additional": {"en": "", "th": ""},
+    "options": ["Type I hypersensitivity","Type II","Type III","Type IV"],
     "answer": "Type I hypersensitivity",
-    "options": ["Type I","Type II","Type III","Type IV"],
-    "key_points": ["IgE"]
+    "key_points": ["IgE"],
+    "explanation": "IgE-mediated reaction is Type I hypersensitivity.",
+    "learning_objective": "Classify hypersensitivity types",
+    "reference": {"source": "AAAAI", "year": "2024", "note": "Allergy classification"}
   },
 
   {
-    "case_id": "DERM_E_007",
+    "case_id": "SKIN_E_007",
     "block": "Skin",
     "mode": "keyword",
     "difficulty": "easy",
-    "scenario": {"en": "Silvery plaques","th": "ผื่นขุยเงิน"},
+    "level": "clinical",
+    "scenario": {"en": "Silvery plaques on extensor surfaces", "th": ""},
     "additional": {"en": "", "th": ""},
-    "answer": "Psoriasis",
     "options": ["Psoriasis","Eczema","Fungal infection","SLE"],
-    "key_points": ["silvery"]
+    "answer": "Psoriasis",
+    "key_points": ["silvery plaques"],
+    "explanation": "Classic psoriasis presentation.",
+    "learning_objective": "Identify psoriasis",
+    "reference": {"source": "AAD Guideline", "year": "2024", "note": "Psoriasis"}
   },
 
   {
@@ -112,13 +116,47 @@
     "block": "Musculoskeletal",
     "mode": "scenario",
     "difficulty": "medium",
-    "scenario": {"en": "Morning stiffness >1 hr","th": "ข้อฝืดตอนเช้า"},
-    "additional": {"en": "RF+","th": "RF+"},
+    "level": "clinical",
+    "scenario": {"en": "Morning stiffness >1 hour with joint swelling", "th": ""},
+    "additional": {"en": "RF positive", "th": ""},
+    "options": ["Rheumatoid arthritis","Osteoarthritis","Gout","SLE"],
     "answer": "Rheumatoid arthritis",
-    "options": ["RA","OA","Gout","SLE"],
-    "key_points": ["stiffness"]
+    "key_points": ["stiffness","RF"],
+    "explanation": "Autoimmune joint disease suggests RA.",
+    "learning_objective": "Differentiate RA vs OA",
+    "reference": {"source": "ACR Guideline", "year": "2024", "note": "RA diagnosis"}
+  },
+
+  {
+    "case_id": "MICRO_E_009",
+    "block": "Parasitology and microbiology",
+    "mode": "keyword",
+    "difficulty": "easy",
+    "level": "preclinical",
+    "scenario": {"en": "Rust-colored sputum pneumonia", "th": ""},
+    "additional": {"en": "", "th": ""},
+    "options": ["Streptococcus pneumoniae","Klebsiella","TB","Staph aureus"],
+    "answer": "Streptococcus pneumoniae",
+    "key_points": ["rust sputum"],
+    "explanation": "Classic pneumococcal pneumonia.",
+    "learning_objective": "Identify common pathogens",
+    "reference": {"source": "IDSA Guideline", "year": "2024", "note": "Pneumonia"}
+  },
+
+  {
+    "case_id": "PHARM_M_010",
+    "block": "Pharmacology",
+    "mode": "scenario",
+    "difficulty": "medium",
+    "level": "preclinical",
+    "scenario": {"en": "Patient develops dry cough after starting antihypertensive", "th": ""},
+    "additional": {"en": "", "th": ""},
+    "options": ["ACE inhibitor","ARB","Beta blocker","CCB"],
+    "answer": "ACE inhibitor",
+    "key_points": ["dry cough"],
+    "explanation": "ACE inhibitors cause bradykinin accumulation → cough.",
+    "learning_objective": "Recognize drug side effects",
+    "reference": {"source": "Goodman & Gilman", "year": "2024", "note": "ACE inhibitor"}
   }
 
-  // 🔥 IMPORTANT:
-  // Pattern นี้ทำซ้ำครบ 100 เคส (ทุก block)
 ]
