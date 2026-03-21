@@ -1,84 +1,10 @@
-
-            r_score += 1
-            used.append(k)
-
-    logic_words = ["because","therefore","thus","so","เนื่องจาก","ดังนั้น"]
-    if any(w in reasoning.lower() for w in logic_words):
-        r_score += 1
-
-    if len(reasoning.split()) > 20:
-        r_score += 1
-
-    r_score = min(5, r_score)
-
-    total = dx_score + r_score
-
-    # ===== Examiner Feedback =====
-    feedback = case.get("examiner_feedback","")
-
-    if dx_level == "wrong":
-        feedback = "❌ Diagnosis incorrect. " + feedback
-    elif dx_level == "close":
-        feedback = "⚠️ Close, but not precise. " + feedback
-    else:
-        feedback = "✅ Good diagnostic accuracy. " + feedback
-
-    return dx_score, r_score, total, sim, used, feedback
-
-# ===================== STATS =====================
-def compute_stats(df):
-
-    results = {}
-
-    scores = df["score"].values
-    results["n"] = len(scores)
-    results["mean"] = np.mean(scores)
-    results["sd"] = np.std(scores)
-
-    mid = len(scores)//2
-    early = scores[:mid]
-    late = scores[mid:]
-
-    if len(early)>1 and len(late)>1:
-        t, p = stats.ttest_ind(late, early, equal_var=False)
-
-        pooled_sd = np.sqrt((np.var(early)+np.var(late))/2)
-        d = (np.mean(late)-np.mean(early))/pooled_sd if pooled_sd!=0 else 0
-
-        results.update({
-            "early_mean": np.mean(early),
-            "late_mean": np.mean(late),
-            "p_value": p,
-            "t_stat": t,
-            "effect_size": d
-        })
-
-    return results
-
-# ===================== ADAPTIVE =====================
-if "difficulty" not in st.session_state:
-    st.session_state.difficulty = "easy"
-
-if "recent_scores" not in st.session_state:
-    st.session_state.recent_scores = []
-
-def adjust(score):
-
-    history = st.session_state.recent_scores
-    history.append(score)
-
-    if len(history) > 5:
-        history.pop(0)
-
-    avg = sum(history)/len(history)
-
-    if avg >= 8:
-        return "hard"
-    elif avg >= 5:
-        return "medium"
-    return "easy"
-
-# ===== NEW: BERT =====
+import streamlit as st
+import json, random, pandas as pd
+from datetime import datetime
+import numpy as np
+from scipy import stats
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 from sentence_transformers import SentenceTransformer, util
 
 st.set_page_config(layout="wide")
@@ -108,7 +34,6 @@ def semantic_score(a,b):
     except:
         return 0
 
-# ===== NEW: BERT SEMANTIC =====
 def bert_similarity(a, b):
     try:
         emb1 = bert_model.encode(a, convert_to_tensor=True)
@@ -117,188 +42,117 @@ def bert_similarity(a, b):
     except:
         return 0
 
-# ===================== ORIGINAL SCORING =====================
+# ===================== DECISION TREE =====================
+def extract_decision_steps(reasoning):
+    steps = []
+    keywords = ["because","therefore","thus","so","เนื่องจาก","ดังนั้น"]
+    for s in reasoning.split("."):
+        if any(k in s.lower() for k in keywords):
+            steps.append(s.strip())
+    return steps
+
+def decision_tree_score(reasoning):
+    steps = extract_decision_steps(reasoning)
+    return min(3, len(steps)), steps
+
+# ===================== SCORING =====================
 def evaluate(dx, reasoning, case):
 
     sim = semantic_score(dx, case["answer"])
     
     if normalize(dx) == normalize(case["answer"]):
         dx_score = 5
-        dx_level = "correct"
     elif sim > 0.65:
         dx_score = 3
-        dx_level = "close"
     else:
         dx_score = 0
-        dx_level = "wrong"
-
-    r_score = 0
-    used = []
-    
-    for k in case.get("key_points", []):
-        if k.lower() in reasoning.lower():
-            r_score += 1
-            used.append(k)
-
-    if "because" in reasoning.lower() or "ดังนั้น" in reasoning:
-        r_score += 1
-
-    if len(reasoning.split()) > 20:
-        r_score += 1
-
-    r_score = min(5, r_score)
-    total = dx_score + r_score
-
-    feedback = case.get("examiner_feedback","")
-
-    return dx_score, r_score, total, sim, used, feedback
-
-# ===================== NEW: BERT GRADING =====================
-def bert_grade(reasoning, case):
 
     key_text = " ".join(case.get("key_points", []))
-    sim = bert_similarity(reasoning, key_text)
+    bert_sim = bert_similarity(reasoning, key_text)
 
-    if sim > 0.75:
-        score = 5
-        level = "excellent"
-    elif sim > 0.55:
-        score = 3
-        level = "moderate"
+    if bert_sim > 0.75:
+        r_score = 5
+    elif bert_sim > 0.55:
+        r_score = 3
     else:
-        score = 1
-        level = "poor"
+        r_score = 1
 
-    return score, sim, level
+    dt_score, steps = decision_tree_score(reasoning)
 
-# ===================== NEW: UWorld Reasoning =====================
-def uworld_feedback(case):
+    total = dx_score + r_score + dt_score
+    total = min(10, total)
 
-    return f"""
-### 🧠 Step 1: Key Clinical Clues
-- {", ".join(case.get("key_points", []))}
+    used = [k for k in case.get("key_points", []) if k.lower() in reasoning.lower()]
+    missing = [k for k in case.get("key_points", []) if k not in used]
 
-### 🔍 Step 2: Interpretation
-These findings suggest **{case["answer"]}**
-
-### ⚖️ Step 3: Why not others?
-Incorrect options are ruled out based on missing key features.
-
-### 🎯 Step 4: Final Diagnosis
-**{case["answer"]}**
-
-### 📚 Concept Summary
-{case.get("learning_objective","")}
-"""
+    return dx_score, r_score, dt_score, total, bert_sim, used, missing, steps
 
 # ===================== STATS =====================
 def compute_stats(df):
 
-    results = {}
-
     scores = df["score"].values
-    results["mean"] = np.mean(scores)
-    results["sd"] = np.std(scores)
+    results = {
+        "n": len(scores),
+        "mean": np.mean(scores),
+        "sd": np.std(scores)
+    }
+
+    if len(scores) > 4:
+        mid = len(scores)//2
+        early = scores[:mid]
+        late = scores[mid:]
+
+        t, p = stats.ttest_ind(late, early, equal_var=False)
+
+        pooled_sd = np.sqrt((np.var(early)+np.var(late))/2)
+        d = (np.mean(late)-np.mean(early))/pooled_sd if pooled_sd!=0 else 0
+
+        results.update({
+            "p_value": p,
+            "effect_size": d
+        })
 
     return results
 
-# ===================== UI =====================
-st.title("🔥 AI Clinical Reasoning Platform (BERT + UWorld)")
+# ===================== ADAPTIVE =====================
+if "difficulty" not in st.session_state:
+    st.session_state.difficulty = "easy"
 
-user_id = st.text_input("Enter User ID")
+if "recent_scores" not in st.session_state:
+    st.session_state.recent_scores = []
 
-if not user_id:
-    st.stop()
+def adjust(score):
+    history = st.session_state.recent_scores
+    history.append(score)
 
-block = st.selectbox("Block", ["All"] + list(set(c["block"] for c in cases)))
-difficulty = st.selectbox("Difficulty", ["adaptive","easy","medium","hard"])
+    if len(history) > 5:
+        history.pop(0)
 
-filtered = cases
+    avg = sum(history)/len(history)
 
-if block != "All":
-    filtered = [c for c in filtered if c["block"] == block]
-
-case = random.choice(filtered)
-
-st.subheader("📋 Clinical Case")
-st.write(case["scenario"]["en"])
-
-dx = st.text_input("Diagnosis")
-reasoning = st.text_area("Clinical Reasoning")
-
-if st.button("Submit"):
-
-    dx_s, r_s, total, sim, used, fb = evaluate(dx, reasoning, case)
-
-    # ===== NEW BERT =====
-    bert_s, bert_sim, level = bert_grade(reasoning, case)
-
-    final_score = dx_s + bert_s
-
-    st.success(f"Total Score: {final_score}/10")
-
-    st.write("Diagnosis Score:", dx_s)
-    st.write("BERT Reasoning Score:", bert_s)
-    st.write("BERT Similarity:", round(bert_sim,2))
-
-    st.markdown("### 🧠 AI Examiner Feedback")
-    st.info(fb)
-
-    st.markdown("### 📊 NLP Evaluation")
-    st.write(f"Reasoning quality: {level}")
-
-    st.markdown("### 🧠 UWorld Explanation")
-    st.markdown(uworld_feedback(case))
-
-    st.markdown("### 📖 Reference")
-    st.write(case["reference"]["source"], case["reference"]["year"])
-
-    # SAVE
-    row = {
-        "user": user_id,
-        "score": final_score,
-        "time": datetime.now()
-    }
-
-    df = pd.DataFrame([row])
-
-    try:
-        old = pd.read_csv("responses.csv")
-        df = pd.concat([old, df])
-    except:
-        pass
-
-    df.to_csv("responses.csv", index=False)
-
-# ===================== ANALYTICS =====================
-try:
-    df = pd.read_csv("responses.csv")
-    st.subheader("📈 Performance")
-    st.line_chart(df["score"])
-except:
-    pass
+    if avg >= 8:
+        return "hard"
+    elif avg >= 5:
+        return "medium"
+    return "easy"
 
 # ===================== UI =====================
-st.title("🧠 ACLR Platform (AI Clinical Learning & Reasoning)")
+st.title("🧠 ACLR Platform (AI Clinical Reasoning Trainer)")
 
-# -------- USER LOGIN --------
 user_id = st.text_input("Enter Student ID / Name")
 
 if not user_id:
     st.warning("Please enter user ID to start")
     st.stop()
 
-# -------- TABS --------
 tab1, tab2, tab3, tab4 = st.tabs([
     "🧠 Practice",
     "📊 Analytics",
     "📜 History",
-    "📘 Guide & Rubric"
+    "📘 Guide"
 ])
 
-# ==================================================
-# 🧠 PRACTICE
-# ==================================================
+# ===================== PRACTICE =====================
 with tab1:
 
     col1, col2, col3 = st.columns(3)
@@ -308,7 +162,7 @@ with tab1:
     with col2:
         blocks = sorted(list(set([c["block"] for c in cases])))
         block = st.selectbox("Block",["All"]+blocks)
-        mode_select = st.selectbox("Question Type",["All","keyword","scenario"])
+        mode_select = st.selectbox("Type",["All","keyword","scenario"])
     with col3:
         mode = st.selectbox("Difficulty",["adaptive","easy","medium","hard"])
 
@@ -338,42 +192,34 @@ with tab1:
 
     case = st.session_state.case
 
-    st.subheader(f"{case['block']} | {case['difficulty']} | {case.get('level','')}")
-    st.caption(f"Adaptive difficulty: {st.session_state.difficulty}")
+    st.subheader(f"{case['block']} | {case['difficulty']}")
+    st.caption(f"Adaptive: {st.session_state.difficulty}")
 
-    # ===== DISPLAY CASE =====
-    if case.get("mode") == "keyword":
-        st.markdown("### 🔑 Keywords")
-        st.write(case["scenario"][lang])
-    else:
-        st.markdown("### 📋 Clinical Scenario")
-        st.write(case["scenario"][lang])
-        st.write(case.get("additional", {}).get(lang, ""))
+    st.write(case["scenario"][lang])
+    st.write(case.get("additional", {}).get(lang, ""))
 
     dx = st.text_input("Diagnosis")
     reasoning = st.text_area("Reasoning")
 
     if st.button("Submit"):
 
-        dx_s, r_s, total, sim, used, feedback = evaluate(dx, reasoning, case)
+        dx_s, r_s, dt_s, total, bert_sim, used, missing, steps = evaluate(dx, reasoning, case)
 
-        st.success(f"Score: {total}/10")
-        st.write("Diagnosis score:", dx_s)
-        st.write("Reasoning score:", r_s)
-        st.write("Similarity:", round(sim,2))
-        st.write("Key features used:", used)
+        st.success(f"🔥 Score: {total}/10")
 
-        missing = [k for k in case.get("key_points",[]) if k not in used]
-        st.warning(f"Missing key features: {missing}")
+        st.write("Diagnosis:", dx_s)
+        st.write("Reasoning (BERT):", r_s)
+        st.write("Decision structure:", dt_s)
+        st.write("Semantic similarity:", round(bert_sim,2))
 
-        st.markdown("### 🧠 AI Examiner Feedback")
-        st.info(feedback)
+        st.markdown("### 🌳 Reasoning Steps")
+        for i, s in enumerate(steps):
+            st.write(f"{i+1}. {s}")
+
+        st.warning(f"Missing key points: {missing}")
 
         st.markdown("### 📚 Explanation")
         st.write(case.get("explanation",""))
-
-        st.markdown("### 🎯 Learning Objective")
-        st.write(case.get("learning_objective",""))
 
         st.markdown("### 📖 Reference")
         st.write(f"{case['reference']['source']} ({case['reference']['year']})")
@@ -383,128 +229,57 @@ with tab1:
 
         row = {
             "user": user_id,
-            "time": datetime.now(),
-            "case_id": case["case_id"],
+            "score": total,
             "block": case["block"],
-            "difficulty": case["difficulty"],
-            "score": total
+            "time": datetime.now()
         }
 
         df = pd.DataFrame([row])
 
         try:
             old = pd.read_csv("responses.csv")
-            df = pd.concat([old,df])
+            df = pd.concat([old, df])
         except:
             pass
 
-        df.to_csv("responses.csv",index=False)
+        df.to_csv("responses.csv", index=False)
 
-# ==================================================
-# 📊 ANALYTICS
-# ==================================================
+# ===================== ANALYTICS =====================
 with tab2:
 
     try:
         df = pd.read_csv("responses.csv")
 
-        st.subheader("All Users Overview")
-        stats_all = compute_stats(df)
-        st.write(stats_all)
+        st.write(compute_stats(df))
 
-        st.line_chart(df["score"])
-
-        # Learning curve
-        df["attempt"] = range(len(df))
         st.subheader("Learning Curve")
+        df["attempt"] = range(len(df))
         st.line_chart(df.set_index("attempt")["score"])
 
-        # Block performance
-        st.subheader("Performance by Block")
-        block_perf = df.groupby("block")["score"].mean()
-        st.bar_chart(block_perf)
-
-        st.subheader("Per User Analysis")
-        user_df = df[df["user"]==user_id]
-
-        if len(user_df)>2:
-            stats_user = compute_stats(user_df)
-            st.write(stats_user)
-            st.line_chart(user_df["score"])
-
-        st.subheader("Group Comparison")
-        group_mean = df.groupby("user")["score"].mean()
-        st.bar_chart(group_mean)
+        st.subheader("Block Performance")
+        st.bar_chart(df.groupby("block")["score"].mean())
 
     except:
         st.info("No data yet")
 
-# ==================================================
-# 📜 HISTORY
-# ==================================================
+# ===================== HISTORY =====================
 with tab3:
 
     try:
         df = pd.read_csv("responses.csv")
-
-        st.subheader("Your Attempts")
-        st.dataframe(df[df["user"]==user_id].sort_values("time",ascending=False))
-
-        st.subheader("All Data")
-        st.dataframe(df.tail(20))
-
-        st.download_button("Download CSV", df.to_csv(index=False), "results.csv")
-
+        st.dataframe(df[df["user"]==user_id])
     except:
-        st.info("No history yet")
+        st.info("No history")
 
-# ==================================================
-# 📘 GUIDE
-# ==================================================
+# ===================== GUIDE =====================
 with tab4:
 
-    st.title("📘 User Guide & Scoring Rubric")
-
     st.markdown("""
-## 🧠 วิธีใช้งาน
-1. เลือก block และ difficulty
-2. อ่านเคส
-3. ใส่ diagnosis
-4. อธิบาย reasoning
-5. กด Submit
+## AI Clinical Reasoning Trainer
 
----
+- Diagnosis (0–5)
+- Reasoning via BERT (0–5)
+- Decision steps (0–3)
 
-## 📊 เกณฑ์การให้คะแนน
-
-### Diagnosis (0–5)
-- 5 = ถูกต้อง
-- 3 = ใกล้เคียง
-- 0 = ผิด
-
-### Reasoning (0–5)
-- ใช้ key features
-- มี causal logic
-- มี structured thinking
-
----
-
-## 📈 การแปลผล
-- 8–10 = expert
-- 5–7 = intermediate
-- <5 = improve
-
----
-
-## 📊 Statistical Analysis
-- Mean / SD
-- t-test
-- Effect size (Cohen’s d)
-
----
-
-## 🤖 AI Features
-- Adaptive difficulty
-- Examiner-style feedback
-- Learning curve tracking
+Adaptive learning + analytics included
 """)
