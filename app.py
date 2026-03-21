@@ -44,8 +44,7 @@ def bert_similarity(a,b):
 # ===================== DECISION TREE =====================
 def extract_steps(reasoning):
     keywords = ["because","therefore","thus","so","เนื่องจาก","ดังนั้น"]
-    steps = [s.strip() for s in reasoning.split(".") if any(k in s.lower() for k in keywords)]
-    return steps
+    return [s.strip() for s in reasoning.split(".") if any(k in s.lower() for k in keywords)]
 
 def decision_score(reasoning):
     steps = extract_steps(reasoning)
@@ -54,13 +53,11 @@ def decision_score(reasoning):
 # ===================== SCORING =====================
 def evaluate(dx, reasoning, case, profession):
 
-    # ===== Target answer =====
     if "interprofessional_answers" in case:
         target = case["interprofessional_answers"][profession]
     else:
         target = case["answer"]
 
-    # ===== Diagnosis / Answer =====
     sim = semantic_score(dx, target)
 
     if normalize(dx) == normalize(target):
@@ -70,7 +67,6 @@ def evaluate(dx, reasoning, case, profession):
     else:
         dx_score = 0
 
-    # ===== Reasoning (BERT) =====
     key_text = " ".join(case.get("key_points",[]))
     bert_sim = bert_similarity(reasoning, key_text)
 
@@ -81,7 +77,6 @@ def evaluate(dx, reasoning, case, profession):
     else:
         r_score = 1
 
-    # ===== Decision =====
     dt_score, steps = decision_score(reasoning)
 
     total = min(10, dx_score + r_score + dt_score)
@@ -126,22 +121,17 @@ if "recent_scores" not in st.session_state:
 def adjust(score):
     hist = st.session_state.recent_scores
     hist.append(score)
-
     if len(hist)>5:
         hist.pop(0)
-
     avg = sum(hist)/len(hist)
-
-    if avg>=8:
-        return "hard"
-    elif avg>=5:
-        return "medium"
+    if avg>=8: return "hard"
+    elif avg>=5: return "medium"
     return "easy"
 
 # ===================== UI =====================
 st.title("🧠 Healthcare Clinical Reasoning Platform")
 
-user = st.text_input("Enter Student ID / Name")
+user = st.text_input("Enter Student ID / Name", key="user_input")
 if not user:
     st.stop()
 
@@ -153,20 +143,23 @@ with tab1:
     col1,col2,col3,col4 = st.columns(4)
 
     with col1:
-        language = st.selectbox("Language",["English","Thai"])
+        language = st.selectbox("Language",["English","Thai"], key="lang")
     with col2:
-        block = st.selectbox("Block",["All"]+list(set(c["block"] for c in cases)))
+        block = st.selectbox("Block",["All"]+list(set(c["block"] for c in cases)), key="block")
     with col3:
-        difficulty = st.selectbox("Difficulty",["adaptive","easy","medium","hard"])
+        difficulty = st.selectbox("Difficulty",["adaptive","easy","medium","hard"], key="difficulty")
     with col4:
-        profession = st.selectbox("Profession",
-            ["medicine","nursing","pharmacy","lab","public_health","physio","dentistry"]
+        profession = st.selectbox(
+            "Profession",
+            ["medicine","nursing","pharmacy","lab","public_health","physio","dentistry"],
+            key="profession"
         )
 
-    mode_type = st.selectbox("Mode",["Learning","Exam"])
+    mode_type = st.selectbox("Mode",["Learning","Exam"], key="mode")
 
     lang = "en" if language=="English" else "th"
 
+    # ===== FILTER =====
     filtered = cases
 
     if block!="All":
@@ -178,23 +171,23 @@ with tab1:
         filtered = [c for c in filtered if c.get("difficulty","easy")==st.session_state.difficulty]
 
     if not filtered:
-        filtered = cases
+        st.warning("No cases available")
+        st.stop()
 
+    # ===== FIX CASE RANDOM =====
     current_filter = f"{block}_{difficulty}_{profession}"
 
     if "last_filter" not in st.session_state:
         st.session_state.last_filter = None
-    
-    # ถ้า filter เปลี่ยน → สุ่มใหม่
+
+    if "case" not in st.session_state:
+        st.session_state.case = random.choice(filtered)
+
     if st.session_state.last_filter != current_filter:
         st.session_state.case = random.choice(filtered)
         st.session_state.last_filter = current_filter
-    
-    # ปุ่มสุ่มใหม่
-    if st.button("New Case"):
-        st.session_state.case = random.choice(filtered)
 
-    if st.button("New Case"):
+    if st.button("New Case", key="new_case_btn"):
         st.session_state.case = random.choice(filtered)
 
     case = st.session_state.case
@@ -214,16 +207,15 @@ with tab1:
     else:
         st.info("What is the diagnosis?")
 
-    dx = st.text_input("Your Answer")
-    reasoning = st.text_area("Clinical Reasoning")
+    dx = st.text_input("Your Answer", key="dx")
+    reasoning = st.text_area("Clinical Reasoning", key="reason")
 
-    if st.button("Submit"):
+    if st.button("Submit", key="submit_btn"):
 
         dx_s, r_s, dt_s, total, sim, used, missing, steps, target = evaluate(dx, reasoning, case, profession)
 
         st.success(f"🔥 Score: {total}/10")
 
-        # ===== Competency =====
         st.markdown("### 🎓 Competency")
         st.write({
             "Clinical Knowledge": dx_s,
@@ -233,12 +225,10 @@ with tab1:
 
         st.write("Semantic similarity:", round(sim,2))
 
-        # ===== Steps =====
         st.markdown("### 🌳 Reasoning Steps")
         for i,s in enumerate(steps):
             st.write(f"{i+1}. {s}")
 
-        # ===== Feedback =====
         st.warning(f"Missing key points: {missing}")
 
         if mode_type=="Learning":
@@ -260,11 +250,9 @@ with tab1:
             st.markdown("### 📖 Reference")
             st.write(f"{case['reference']['source']} ({case['reference']['year']})")
 
-        # ===== Adaptive =====
         if difficulty=="adaptive":
             st.session_state.difficulty = adjust(total)
 
-        # ===== SAVE =====
         row = {
             "user":user,
             "score":total,
@@ -285,24 +273,22 @@ with tab1:
 
 # ===================== ANALYTICS =====================
 with tab2:
-
     try:
         df = pd.read_csv("responses.csv")
 
         st.write(compute_stats(df))
 
-        st.subheader("Learning Curve")
         df["attempt"] = range(len(df))
         st.line_chart(df.set_index("attempt")["score"])
 
-        st.subheader("Performance by Block")
+        st.subheader("By Block")
         st.bar_chart(df.groupby("block")["score"].mean())
 
-        st.subheader("Performance by Profession")
+        st.subheader("By Profession")
         st.bar_chart(df.groupby("profession")["score"].mean())
 
     except:
-        st.info("No data yet")
+        st.info("No data")
 
 # ===================== HISTORY =====================
 with tab3:
@@ -317,18 +303,14 @@ with tab4:
     st.markdown("""
 ## 🧠 Healthcare Clinical Reasoning Platform
 
-### 🎯 Features
-- Interprofessional learning (7 professions)
-- AI reasoning evaluation (BERT)
-- Decision tree analysis
+- Interprofessional (7 professions)
+- AI reasoning (BERT)
+- Decision thinking
 - Adaptive difficulty
-- Learning & Exam mode
+- Learning / Exam mode
 
-### 📊 Scoring
+Score:
 - Knowledge (0–5)
 - Reasoning (0–5)
 - Decision (0–3)
-
-### 🎓 Purpose
-Train real clinical thinking across healthcare disciplines
 """)
