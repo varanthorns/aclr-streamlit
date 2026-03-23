@@ -1,5 +1,10 @@
 import streamlit as st
 import json, random, pandas as pd, time
+def safe_case(case):
+    case.setdefault("task", {})
+    case.setdefault("interprofessional_answers", {})
+    case.setdefault("reference", {"source":"Unknown","year":"-"})
+    return case
 from datetime import datetime
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -66,7 +71,7 @@ def evaluate(dx, reasoning, case, profession):
 # ===================== SESSION =====================
 if "case" not in st.session_state:
     st.session_state.case = random.choice(cases)
-
+    case = safe_case(case)
 # ===================== HEADER =====================
 st.title("🧠 ACLR – Clinical Reasoning Platform")
 st.caption("UWorld + AMBOSS + OSCE + Interprofessional Simulation")
@@ -118,9 +123,36 @@ with col1:
 
     if case.get("additional"):
         st.caption(case["additional"].get("en",""))
-
+    # ===== TASK (FIXED) =====
     st.markdown("## 🎯 Your Task")
+    
     task = case.get("task", {})
+    
+    task_text = task.get(
+        profession,
+        task.get("medicine", "Provide your clinical decision")
+    )
+    
+    st.warning(task_text)
+    
+    # ===== TEAM BOARD (FIXED) =====
+    st.markdown("## 👥 Team Decision Board")
+    
+    ipa = case.get("interprofessional_answers", {})
+    
+    for role, ans in ipa.items():
+        if role == profession:
+            st.success(f"🟢 {role}\n{ans}")
+        else:
+            st.info(f"{role}\n{ans}")
+    
+    # ===== REFERENCE (FIXED) =====
+    st.markdown("## 📖 Reference")
+    
+    ref = case.get("reference", {})
+    st.write(f"{ref.get('source','Unknown')} ({ref.get('year','-' )})")
+        st.markdown("## 🎯 Your Task")
+        task = case.get("task", {})
 
     task_text = task.get(
         profession,
