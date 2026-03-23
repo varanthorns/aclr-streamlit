@@ -4,9 +4,10 @@ from datetime import datetime
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+from streamlit_mic_recorder import mic_recorder
 
-# ต้องอยู่บรรทัดแรกสุดของสคริปต์
-st.set_page_config(layout="wide", page_title="ACLR Clinical Reasoning Professional")
+# ===================== CONFIG =====================
+st.set_page_config(layout="wide", page_title="ACLR Ultimate Clinical Reasoning")
 
 # ===================== UTILS & LOAD =====================
 def safe_case(case):
@@ -14,9 +15,10 @@ def safe_case(case):
     case.setdefault("difficulty", "medium")
     case.setdefault("task", {})
     case.setdefault("interprofessional_answers", {})
-    case.setdefault("reference", {"source":"Unknown","year":"-"})
+    case.setdefault("reference", {"source":"Unknown","year":"2026"})
     case.setdefault("key_points", [])
-    case.setdefault("labs", []) # เพิ่มเพื่อรองรับระบบ Lab
+    case.setdefault("labs", [])
+    case.setdefault("image_url", None)
     return case
 
 @st.cache_data
@@ -26,233 +28,163 @@ def load_cases():
             data = json.load(f)
             return [safe_case(c) for c in data]
     except FileNotFoundError:
-        # Mock Data ระดับ Professional สำหรับทดสอบ
         return [safe_case({
             "block":"Cardiovascular", 
             "difficulty":"hard", 
-            "scenario":{"en":"A 62-year-old male with a history of HTN and smoking presents with 2 hours of substernal chest pressure and diaphoresis. BP 150/90, HR 95."}, 
-            "labs": [
-                {"Test": "Troponin T", "Result": "250", "Unit": "ng/L", "Range": "< 14"},
-                {"Test": "CK-MB", "Result": "12.5", "Unit": "ng/mL", "Range": "< 5.0"}
-            ],
-            "answer":"ST-Elevation Myocardial Infarction", 
-            "key_points":["chest pressure", "diaphoresis", "troponin", "smoking"],
-            "interprofessional_answers": {
-                "medicine": "Activate cath lab for primary PCI.",
-                "nursing": "Establish IV access and continuous ECG monitoring.",
-                "pharmacy": "Administer Aspirin 325mg and Clopidogrel loading dose."
-            },
-            "reference": {"source": "AHA/ACC STEMI Guidelines", "year": "2026"}
+            "scenario":{"en":"A 62-year-old male presents with acute substernal chest pain. EKG shows ST-elevation in II, III, aVF."}, 
+            "image_url": "https://p0.pikist.com/photos/403/619/ecg-heart-rate-frequency-medical-medicine-health-science-curve-pulse.jpg",
+            "labs": [{"Test": "Troponin T", "Result": "450", "Unit": "ng/L", "Range": "< 14"}],
+            "answer":"Inferior Wall MI", 
+            "key_points":["ST-elevation", "inferior", "chest pain"],
+            "interprofessional_answers": {"medicine": "Primary PCI", "pharmacy": "Aspirin + Heparin"}
         })]
 
 cases = load_cases()
 
-def normalize(t): return str(t).lower().strip()
-
 def semantic_score(a, b):
     try:
-        vec = TfidfVectorizer().fit_transform([a, b])
+        vec = TfidfVectorizer().fit_transform([str(a), str(b)])
         return cosine_similarity(vec[0:1], vec[1:2])[0][0]
-    except:
-        return 0
+    except: return 0
 
 def extract_steps(reasoning):
-    keys = ["because","therefore","thus","so","เนื่องจาก","ดังนั้น", "ทำให้", "ส่งผล", "เนื่องด้วย"]
+    keys = ["because","therefore","thus","so","เนื่องจาก","ดังนั้น", "ทำให้", "ส่งผล"]
     return [s.strip() for s in reasoning.split(".") if any(k in s.lower() for k in keys) and s.strip()]
-
-# ===================== SCORING =====================
-def evaluate(dx, reasoning, case, profession):
-    target = case.get("interprofessional_answers", {}).get(profession, case.get("answer", ""))
-    sim = semantic_score(dx, target)
-
-    if normalize(dx) == normalize(target):
-        dx_score, level = 5, "correct"
-    elif sim > 0.6:
-        dx_score, level = 3, "close"
-    else:
-        dx_score, level = 0, "wrong"
-
-    r_score = 0
-    used = []
-    for k in case.get("key_points", []):
-        if k.lower() in reasoning.lower():
-            r_score += 1
-            used.append(k)
-
-    steps = extract_steps(reasoning)
-    d_score = min(3, len(steps))
-    r_score = min(5, r_score + (1 if len(reasoning.split()) > 20 else 0))
-    total = min(10, dx_score + r_score + d_score)
-
-    return total, dx_score, r_score, d_score, target, used, steps, level
 
 # ===================== SESSION STATE =====================
 if "case" not in st.session_state:
     st.session_state.case = random.choice(cases)
-
 if "submitted" not in st.session_state:
     st.session_state.submitted = False
+if "voice_text" not in st.session_state:
+    st.session_state.voice_text = ""
 
 # ===================== HEADER =====================
-st.title("🧠 ACLR – Clinical Reasoning Platform")
-st.caption("UWorld + AMBOSS + OSCE + Interprofessional Simulation (Edition 2026)")
+st.title("🧠 ACLR – Clinical Reasoning Ultimate")
+st.caption("Advanced Interprofessional OSCE Simulator 2026")
 
-user = st.text_input("👤 User ID / Name")
-if not user:
-    st.info("Please enter your User ID to begin.")
-    st.stop()
+user = st.text_input("👤 User ID / Name", value="Doctor_X")
+if not user: st.stop()
 
 # ===================== SIDEBAR =====================
 with st.sidebar:
-    st.header("⚙️ Settings")
-    profession = st.selectbox("👩‍⚕️ Profession", ["medicine","dentistry","nursing","vet","pharmacy","public_health","ams"])
+    st.header("⚙️ Station Settings")
+    profession = st.selectbox("👩‍⚕️ Your Role", ["medicine","nursing","pharmacy","ams","public_health"])
+    mode = st.radio("Mode", ["Practice", "OSCE (Timed)", "Battle (Leaderboard)"])
     
-    all_blocks = ["All"] + list(set(c["block"] for c in cases))
-    block_choice = st.selectbox("📚 Block", all_blocks)
+    st.divider()
+    block_choice = st.selectbox("📚 Select Block", ["All"] + list(set(c["block"] for c in cases)))
     diff_choice = st.selectbox("🎯 Difficulty", ["easy","medium","hard"])
-    mode = st.radio("Mode", ["Practice", "OSCE", "Battle"])
 
-    if st.button("🔄 New Case"):
+    if st.button("🔄 Next Case"):
         filtered = [c for c in cases if (block_choice == "All" or c["block"] == block_choice) and c["difficulty"] == diff_choice]
-        if filtered:
-            st.session_state.case = random.choice(filtered)
-            st.session_state.submitted = False
-            st.session_state.pop("start", None)
-            st.rerun()
-        else:
-            st.warning("No cases found matching these criteria.")
+        st.session_state.case = random.choice(filtered) if filtered else random.choice(cases)
+        st.session_state.submitted = False
+        st.session_state.voice_text = ""
+        st.rerun()
 
 case = st.session_state.case
 
-# ===================== MAIN LAYOUT (UPGRADED) =====================
+# ===================== MAIN LAYOUT =====================
 col1, col2 = st.columns([2, 1])
 
 with col1:
-    # ------------------ TABS SECTION ------------------
-    tab1, tab2, tab3 = st.tabs(["📋 Clinical Scenario", "🩸 Investigations", "📝 Answer Sheet"])
+    tab1, tab2, tab3 = st.tabs(["📋 Scenario", "🧪 Diagnostics", "✍️ Analysis"])
     
     with tab1:
-        st.markdown("### Patient Presentation")
-        st.info(case["scenario"].get("en", "No scenario available"))
-        if case.get("additional"):
-            st.caption(f"**Vitals/Clinical Notes:** {case['additional'].get('en', '')}")
+        st.info(case["scenario"].get("en", ""))
+        if case["image_url"]:
+            st.image(case["image_url"], caption="Clinical Imaging / EKG / Lab Slide", use_container_width=True)
+            
             
     with tab2:
-        st.markdown("### 🧪 Laboratory & Diagnostic Results")
-        if case.get("labs"):
-            st.table(pd.DataFrame(case["labs"]))
-        else:
-            st.info("No specific laboratory data provided for this case.")
-        
-        # เพิ่มพื้นที่สำหรับ Imaging ในอนาคต
-        st.caption("Note: Radiological images are currently described in the clinical notes.")
+        st.markdown("### 🔬 Laboratory Findings")
+        if case["labs"]: st.table(pd.DataFrame(case["labs"]))
+        else: st.write("No specific labs provided.")
 
     with tab3:
-        st.markdown("### 🎯 Your Task")
-        task_text = case.get("task", {}).get(profession, "Provide your definitive clinical decision and reasoning.")
-        st.warning(task_text)
-
-        if mode == "OSCE":
-            if "start" not in st.session_state:
-                if st.button("▶️ Start Timer"):
-                    st.session_state.start = time.time()
-                    st.rerun()
-            else:
-                elapsed = int(time.time() - st.session_state.start)
-                remaining = max(0, 180 - elapsed)
-                st.metric("⏱ Time Left", f"{remaining}s")
-                if remaining <= 0: st.error("⏰ Time up!")
-
-        # ------------------ INPUT SECTION ------------------
-        ddx = st.multiselect("🔍 Differential Diagnosis (Select relevant possibilities)", 
-                           ["Sepsis", "MI", "Pulmonary Embolism", "Pneumonia", "Aortic Dissection", "Heart Failure", "Gastroenteritis", "Other"])
+        st.warning(f"**Task:** {case.get('task', {}).get(profession, 'Diagnose and provide reasoning.')}")
         
-        dx = st.text_input("🩺 Final Diagnosis / Management Plan")
-        reasoning = st.text_area("✍️ Clinical Reasoning (Identify Evidence & Pathophysiology)", height=150)
+        # --- Voice Integration (SBAR Reporting) ---
+        st.markdown("##### 🎙️ Voice SBAR Reporting (Optional)")
+        audio = mic_recorder(start_prompt="Click to Speak (OSCE Mode)", stop_prompt="Stop Recording", key='recorder')
+        if audio:
+            st.session_state.voice_text = "Audio recorded (Simulated transcription: " + case["answer"] + " due to clinical findings)"
+            st.success("Voice Captured!")
+
+        # --- Input Fields ---
+        ddx = st.multiselect("🔍 Differential Diagnosis", ["MI", "PE", "Sepsis", "Pneumonia", "Aortic Dissection", "Other"])
+        dx = st.text_input("🩺 Final Diagnosis", value=st.session_state.voice_text if st.session_state.voice_text else "")
+        reasoning = st.text_area("✍️ Pathophysiological Reasoning", height=100)
         
+        c1, c2 = st.columns(2)
+        with c1:
+            next_step = st.selectbox("🚀 Next Best Step", ["Observation", "Emergency Surgery", "Empirical Meds", "Referral", "Discharge"])
+        with c2:
+            dispo = st.selectbox("🏥 Disposition", ["Home", "Ward", "ICU", "OR"])
+            
+        exclusion = st.text_area("🚫 Why exclude other DDx?", placeholder="Explain why it's not the other options...")
+
         if st.button("✅ Submit Decision"):
             if dx and reasoning:
                 st.session_state.submitted = True
-                # ประมวลผลคะแนน
                 total, dx_s, r_s, d_s, target, used, steps, level = evaluate(dx, reasoning, case, profession)
                 
-                # แสดงผลลัพธ์ด้วย Visuals
-                st.divider()
-                st.markdown(f"### 🏆 Competency Report: {total}/10")
-                
-                res_cols = st.columns(3)
-                res_cols[0].metric("Accuracy Score", f"{dx_s}/5")
-                res_cols[1].metric("Reasoning Score", f"{r_s}/5")
-                res_cols[2].metric("Logic Steps", f"{d_s}/3")
-                
-                st.progress(total * 10, text=f"Overall Competency: {level.upper()}")
-
-                # Feedback Detailed
-                st.markdown("#### 🔍 AI Examiner Feedback")
-                if level == "correct": st.success("Excellent accuracy. Your diagnosis matches current clinical guidelines.")
-                elif level == "close": st.warning("Clinically close. However, the exact terminology or specificity could be improved.")
-                else: st.error("Diagnosis inconsistent with evidence. Please review the key clinical features.")
-                
-                st.markdown(f"**Gold Standard Answer:** `{target}`")
-                
-                c_left, c_right = st.columns(2)
-                with c_left:
-                    st.write("**Key Clinical Features Identified:**")
-                    for u in used: st.write(f"✅ {u}")
-                    missing = [k for k in case.get("key_points", []) if k.lower() not in reasoning.lower()]
-                    if missing:
-                        st.write("**Features Overlooked:**")
-                        for m in missing: st.write(f"❌ {m}")
-                
-                with c_right:
-                    st.write("**Logic Path (Causal Links):**")
-                    if steps:
-                        for s in steps: st.write(f"🔹 {s}")
-                    else:
-                        st.write("No clear 'Cause-Effect' linking words found (e.g., 'therefore', 'results in').")
-
-                # บันทึกประวัติ
+                # บันทึกลง responses.csv
                 res_df = pd.DataFrame([{"user": user, "block": case["block"], "score": total, "time": datetime.now()}])
                 try:
                     old = pd.read_csv("responses.csv")
                     res_df = pd.concat([old, res_df])
                 except: pass
                 res_df.to_csv("responses.csv", index=False)
-                st.toast("Progress Saved!")
-            else:
-                st.error("Submission incomplete. Diagnosis and Reasoning are mandatory.")
+                st.rerun()
 
-# ===================== RIGHT SIDEBAR / COL 2 =====================
+    # --- Result Display ---
+    if st.session_state.submitted:
+        st.divider()
+        total, dx_s, r_s, d_s, target, used, steps, level = evaluate(dx, reasoning, case, profession)
+        st.markdown(f"### 📊 Result: {total}/10")
+        st.progress(total * 10)
+        
+        r1, r2, r3 = st.columns(3)
+        r1.metric("Dx Accuracy", f"{dx_s}/5")
+        r2.metric("Reasoning", f"{r_s}/5")
+        r3.metric("Logic Steps", f"{d_s}/3")
+        
+        st.markdown(f"**Correct Answer:** `{target}`")
+        st.write("**AI Feedback:**", "Excellent" if level=="correct" else "Review the key features.")
+
+# ===================== COL 2: TEAM & ANALYTICS =====================
 with col2:
-    st.markdown("## 👥 Team Decision Board")
-    
+    if mode == "Battle (Leaderboard)":
+        st.markdown("## 🏆 Global Leaderboard")
+        try:
+            df_all = pd.read_csv("responses.csv")
+            leaderboard = df_all.groupby("block")["score"].mean().sort_values(ascending=False)
+            st.dataframe(leaderboard, use_container_width=True)
+            st.caption("Your Block Proficiency vs Global Average")
+        except: st.write("Start playing to see rankings.")
+
+    st.markdown("## 👥 Interprofessional Board")
     if st.session_state.submitted:
         ipa = case.get("interprofessional_answers", {})
-        if ipa:
-            for role, ans in ipa.items():
-                if role == profession:
-                    st.success(f"🟢 **{role.upper()} (Your Role):** \n{ans}")
-                else:
-                    st.info(f"⚪ **{role.upper()}:** \n{ans}")
-        else:
-            st.write("No interprofessional data available.")
+        for role, ans in ipa.items():
+            with st.expander(f"Insight from {role.upper()}", expanded=True):
+                st.write(ans)
     else:
-        st.info("🔒 **Interprofessional Insights Locked**")
-        st.caption("Submit your clinical decision to synchronize with the care team.")
+        st.info("🔒 Decision required to unlock team insights.")
 
     st.markdown("---")
-    st.markdown("## 📖 Reference & Evidence")
-    ref = case.get("reference", {})
-    st.write(f"📚 **Source:** {ref.get('source','-')}")
-    st.write(f"📅 **Year:** {ref.get('year','-')}")
-
-    st.markdown("## 📊 Performance Analytics")
+    st.markdown("## 📖 Evidence Reference")
+    st.caption(f"Source: {case['reference']['source']} ({case['reference']['year']})")
+    
+    # Performance Chart
     try:
         df = pd.read_csv("responses.csv")
         user_df = df[df["user"] == user]
         if not user_df.empty:
             st.line_chart(user_df.set_index("time")["score"])
-        else:
-            st.caption("No data points available yet.")
-    except:
-        st.caption("History will appear after your first case.")
+    except: pass
+
+st.markdown("---")
+st.caption("ACLR Professional v3.0 | 2026 Updated Guidelines")
