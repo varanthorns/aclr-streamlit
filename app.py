@@ -4,7 +4,6 @@ from datetime import datetime
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-from sentence_transformers import SentenceTransformer, util
 
 st.set_page_config(layout="wide")
 
@@ -16,12 +15,6 @@ def load_cases():
 
 cases = load_cases()
 
-@st.cache_resource
-def load_bert():
-    return SentenceTransformer("all-MiniLM-L6-v2")
-
-bert_model = load_bert()
-
 # ===================== UTILS =====================
 def normalize(t): return str(t).lower().strip()
 
@@ -32,15 +25,6 @@ def semantic_score(a,b):
     except:
         return 0
 
-def bert_similarity(a,b):
-    try:
-        emb1 = bert_model.encode(a, convert_to_tensor=True)
-        emb2 = bert_model.encode(b, convert_to_tensor=True)
-        return float(util.cos_sim(emb1, emb2))
-    except:
-        return 0
-
-# ===================== DECISION =====================
 def extract_steps(reasoning):
     keys = ["because","therefore","thus","so","เนื่องจาก","ดังนั้น"]
     return [s for s in reasoning.split(".") if any(k in s.lower() for k in keys)]
@@ -54,166 +38,239 @@ def evaluate(dx, reasoning, case, profession):
 
     if normalize(dx) == normalize(target):
         dx_score = 5
+        level = "correct"
     elif sim > 0.6:
         dx_score = 3
+        level = "close"
     else:
         dx_score = 0
+        level = "wrong"
 
-    key_text = " ".join(case.get("key_points",[]))
-    r_sim = bert_similarity(reasoning, key_text)
+    r_score = 0
+    used = []
 
-    if r_sim > 0.75:
-        r_score = 5
-    elif r_sim > 0.55:
-        r_score = 3
-    else:
-        r_score = 1
+    for k in case.get("key_points",[]):
+        if k.lower() in reasoning.lower():
+            r_score += 1
+            used.append(k)
 
     steps = extract_steps(reasoning)
     d_score = min(3,len(steps))
 
+    r_score = min(5, r_score + (1 if len(reasoning.split())>20 else 0))
+
     total = min(10, dx_score + r_score + d_score)
 
-    return total, dx_score, r_score, d_score, target, r_sim
-
-# ===================== WEAKNESS AI =====================
-def analyze_weakness(df, user):
-
-    user_df = df[df["user"]==user]
-
-    if len(user_df)<5:
-        return "Not enough data"
-
-    weak_block = user_df.groupby("block")["score"].mean().idxmin()
-    weak_prof = user_df.groupby("profession")["score"].mean().idxmin()
-
-    return f"Weakest Block: {weak_block} | Weakest Role: {weak_prof}"
+    return total, dx_score, r_score, d_score, target, used, steps, level
 
 # ===================== SESSION =====================
-if "difficulty" not in st.session_state:
-    st.session_state.difficulty = "easy"
+if "case" not in st.session_state:
+    st.session_state.case = random.choice(cases)
 
-# ===================== UI =====================
-st.title("🔥 AI Healthcare Education Platform")
+# ===================== HEADER =====================
+st.title("🧠 ACLR – Clinical Reasoning Platform")
+st.caption("UWorld + AMBOSS + OSCE + Interprofessional Simulation")
 
-user = st.text_input("Enter Name", key="user")
+user = st.text_input("👤 User ID / Name")
 if not user:
     st.stop()
 
-tab1,tab2,tab3,tab4 = st.tabs(["🧠 Practice","⏱ OSCE","⚔️ Battle","📊 Analytics"])
+# ===================== SIDEBAR =====================
+with st.sidebar:
+    st.header("⚙️ Settings")
 
-# ==================================================
-# 🧠 PRACTICE
-# ==================================================
-with tab1:
+    profession = st.selectbox(
+        "👩‍⚕️ Profession",
+        ["medicine","dentistry","nursing","vet","pharmacy","public_health","ams"]
+    )
 
-    col1,col2,col3 = st.columns(3)
+    block = st.selectbox("📚 Block",["All"]+list(set(c["block"] for c in cases)))
+    difficulty = st.selectbox("🎯 Difficulty",["easy","medium","hard"])
 
-    with col1:
-        block = st.selectbox("Block",["All"]+list(set(c["block"] for c in cases)), key="block")
-    with col2:
-        difficulty = st.selectbox("Difficulty",["easy","medium","hard"], key="diff")
-    with col3:
-        profession = st.selectbox(
-            "Profession",
-            ["medicine","dentistry","nursing","vet","pharmacy","public_health","ams"],
-            key="prof"
-        )
+    mode = st.radio("Mode",["Practice","OSCE","Battle"])
 
-    filtered = [c for c in cases if (block=="All" or c["block"]==block) and c["difficulty"]==difficulty]
+    if st.button("🔄 New Case"):
+        st.session_state.case = random.choice(cases)
 
-    if not filtered:
-        st.warning("No cases")
-        st.stop()
+case = st.session_state.case
 
+# ===================== FILTER =====================
+filtered = [
+    c for c in cases
+    if (block=="All" or c["block"]==block)
+    and c["difficulty"]==difficulty
+]
+
+if filtered:
     case = random.choice(filtered)
+    st.session_state.case = case
 
-    st.markdown("### 📋 Case")
-    st.write(case["scenario"]["en"])
-
-    dx = st.text_input("Answer", key="dx1")
-    reasoning = st.text_area("Reasoning", key="rs1")
-
-    if st.button("Submit", key="sub1"):
-
-        total, dx_s, r_s, d_s, target, sim = evaluate(dx, reasoning, case, profession)
-
-        st.success(f"Score: {total}/10")
-        st.write("Correct:", target)
+# ===================== MAIN LAYOUT =====================
+col1, col2 = st.columns([2,1])
 
 # ==================================================
-# ⏱ OSCE MODE
+# LEFT: CASE + INPUT
 # ==================================================
-with tab2:
+with col1:
 
-    st.markdown("## ⏱ OSCE Mode (Timed)")
+    st.markdown("## 📋 Clinical Scenario")
+    st.info(case["scenario"]["en"])
 
-    duration = st.slider("Time (sec)",30,180,60)
+    if case.get("additional"):
+        st.caption(case["additional"].get("en",""))
 
-    if st.button("Start OSCE", key="osce_start"):
-        st.session_state.start = time.time()
+    st.markdown("## 🎯 Your Task")
+    st.warning(case["task"][profession])
 
-    if "start" in st.session_state:
-        remaining = duration - int(time.time()-st.session_state.start)
-        st.write(f"Time left: {remaining}s")
+    st.markdown("## 🧠 Think Step-by-Step")
+    st.caption("""
+    1. Identify key symptoms  
+    2. Link pathophysiology  
+    3. Consider differential  
+    4. Decide
+    """)
 
-        if remaining <= 0:
-            st.error("⏰ Time up!")
+    # OSCE TIMER
+    if mode == "OSCE":
+        if "start" not in st.session_state:
+            if st.button("▶️ Start OSCE"):
+                st.session_state.start = time.time()
+
         else:
-            case = random.choice(cases)
-            st.write(case["scenario"]["en"])
+            remaining = 60 - int(time.time()-st.session_state.start)
+            st.metric("⏱ Time Left", remaining)
 
-            dx = st.text_input("Answer", key="osce_dx")
-            reasoning = st.text_area("Reasoning", key="osce_rs")
+            if remaining <= 0:
+                st.error("⏰ Time up!")
 
-            if st.button("Submit OSCE", key="osce_submit"):
-                total, *_ = evaluate(dx, reasoning, case, "medicine")
-                st.success(f"Score: {total}")
+    dx = st.text_input("🩺 Your Diagnosis / Answer")
+    reasoning = st.text_area("✍️ Clinical Reasoning")
+
+    confidence = st.slider("Confidence (%)",0,100,50)
+
+    if st.button("✅ Submit"):
+
+        total, dx_s, r_s, d_s, target, used, steps, level = evaluate(dx, reasoning, case, profession)
+
+        st.success(f"🏆 Score: {total}/10")
+
+        # =====================
+        # FEEDBACK
+        # =====================
+        st.markdown("## 🧠 AI Examiner Feedback")
+
+        if level=="correct":
+            st.success("Excellent diagnostic accuracy")
+        elif level=="close":
+            st.warning("Close but not precise")
+        else:
+            st.error("Incorrect diagnosis")
+
+        st.write("Correct Answer:", target)
+
+        st.markdown("## 🔍 Key Features Used")
+        st.write(used)
+
+        missing = [k for k in case.get("key_points",[]) if k not in used]
+        st.warning(f"Missing: {missing}")
+
+        st.markdown("## 🌳 Your Clinical Thinking")
+        if steps:
+            for i,s in enumerate(steps):
+                st.success(f"Step {i+1}: {s}")
+        else:
+            st.error("No structured reasoning detected")
+
+        # Confidence check
+        if confidence > 80 and total < 5:
+            st.warning("⚠️ Overconfidence detected")
+
+        # Save
+        row = {
+            "user": user,
+            "block": case["block"],
+            "profession": profession,
+            "score": total,
+            "time": datetime.now()
+        }
+
+        df = pd.DataFrame([row])
+
+        try:
+            old = pd.read_csv("responses.csv")
+            df = pd.concat([old,df])
+        except:
+            pass
+
+        df.to_csv("responses.csv",index=False)
 
 # ==================================================
-# ⚔️ TEAM BATTLE
+# RIGHT: TEAM + ANALYTICS
 # ==================================================
-with tab3:
+with col2:
 
-    st.markdown("## ⚔️ Team Battle")
+    st.markdown("## 👥 Team Decision Board")
 
-    players = st.text_area("Enter players (comma separated)", key="players")
-    
-    if players:
-        players = [p.strip() for p in players.split(",")]
+    for role,ans in case["interprofessional_answers"].items():
+        if role == profession:
+            st.success(f"🟢 {role}\n{ans}")
+        else:
+            st.info(f"{role}\n{ans}")
 
-        case = random.choice(cases)
-        st.write(case["scenario"]["en"])
+    st.markdown("## ❌ Common Mistakes")
+    st.error("""
+    - Missed key symptom  
+    - Ignored lab data  
+    - Jumped to conclusion  
+    """)
 
-        scores = {}
+    st.markdown("## 📖 Reference")
+    st.write(f"{case['reference']['source']} ({case['reference']['year']})")
 
-        for p in players:
-            dx = st.text_input(f"{p} Diagnosis", key=f"{p}_dx")
-            rs = st.text_area(f"{p} Reasoning", key=f"{p}_rs")
-
-            if st.button(f"Submit {p}", key=f"{p}_btn"):
-                total, *_ = evaluate(dx, rs, case, "medicine")
-                scores[p] = total
-
-        if scores:
-            st.write("🏆 Results")
-            st.write(sorted(scores.items(), key=lambda x: x[1], reverse=True))
-
-# ==================================================
-# 📊 ANALYTICS + WEAKNESS AI
-# ==================================================
-with tab4:
+    # =====================
+    # ANALYTICS
+    # =====================
+    st.markdown("## 📊 Your Performance")
 
     try:
         df = pd.read_csv("responses.csv")
 
-        st.line_chart(df["score"])
+        user_df = df[df["user"]==user]
 
-        st.markdown("## 🧠 Weakness AI")
-        st.warning(analyze_weakness(df, user))
+        if len(user_df)>0:
+            st.line_chart(user_df["score"])
 
-        st.bar_chart(df.groupby("block")["score"].mean())
-        st.bar_chart(df.groupby("profession")["score"].mean())
+            weak_block = user_df.groupby("block")["score"].mean().idxmin()
+            st.warning(f"Weakest Block: {weak_block}")
 
     except:
         st.info("No data yet")
+
+# ==================================================
+# BATTLE MODE
+# ==================================================
+if mode == "Battle":
+
+    st.markdown("## ⚔️ Team Battle")
+
+    players = st.text_input("Players (comma separated)")
+
+    if players:
+        players = [p.strip() for p in players.split(",")]
+
+        scores = {}
+
+        for p in players:
+            dx = st.text_input(f"{p} Answer", key=f"{p}_dx")
+            rs = st.text_area(f"{p} Reasoning", key=f"{p}_rs")
+
+            if st.button(f"Submit {p}", key=f"{p}_btn"):
+                total, *_ = evaluate(dx, rs, case, profession)
+                scores[p] = total
+
+        if scores:
+            st.markdown("## 🏆 Leaderboard")
+            leaderboard = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+
+            for i,(name,score) in enumerate(leaderboard):
+                st.write(f"{i+1}. {name} — {score}")
