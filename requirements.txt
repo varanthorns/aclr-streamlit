@@ -1,7 +1,5 @@
 streamlit
 pandas
-scikit-learn
-sentence-transformers
-torch
 numpy
-mic_recorder
+scikit-learn
+streamlit-mic-recorder
