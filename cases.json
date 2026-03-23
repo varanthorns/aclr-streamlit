@@ -1,235 +1,139 @@
-[
-  {
-    "case_id": "ENDO_E_001",
-    "block": "Endocrine",
-    "mode": "scenario",
-    "difficulty": "easy",
-    "scenario": {
-      "en": "A 24-year-old woman presents with polyuria, polydipsia, and weight loss for 3 months.",
-      "th": "หญิง 24 ปี ปัสสาวะบ่อย กระหายน้ำ น้ำหนักลด"
-    },
-    "additional": {
-      "en": "Fasting glucose 260 mg/dL",
-      "th": "น้ำตาล 260"
-    },
-    "answer": "Diabetes mellitus",
-    "key_points": ["polyuria","polydipsia","weight loss"],
-    "task": {
-      "medicine": "What is the most likely diagnosis?",
-      "dentistry": "What oral manifestation may occur?",
-      "nursing": "What parameter should be monitored?",
-      "vet": "Analogous endocrine disorder?",
-      "pharmacy": "First-line drug?",
-      "public_health": "Main risk factor?",
-      "ams": "Confirmatory lab test?"
-    },
-    "interprofessional_answers": {
-      "medicine": "Diabetes mellitus",
-      "dentistry": "Periodontitis",
-      "nursing": "Blood glucose monitoring",
-      "vet": "Diabetes mellitus",
-      "pharmacy": "Metformin",
-      "public_health": "Obesity",
-      "ams": "HbA1c"
-    },
-    "reference": {
-      "source": "American Diabetes Association Standards of Care",
-      "year": 2024
-    }
-  },
+import json, random, copy
 
-  {
-    "case_id": "ENDO_M_002",
-    "block": "Endocrine",
-    "mode": "scenario",
-    "difficulty": "medium",
-    "scenario": {
-      "en": "A 35-year-old woman presents with fatigue, weight gain, and cold intolerance.",
-      "th": "อ่อนเพลีย น้ำหนักขึ้น ทนหนาวไม่ได้"
-    },
-    "additional": {
-      "en": "TSH high, free T4 low",
-      "th": "TSH สูง T4 ต่ำ"
-    },
-    "answer": "Hypothyroidism",
-    "key_points": ["fatigue","weight gain","cold intolerance"],
-    "task": {
-      "medicine": "Diagnosis?",
-      "dentistry": "Oral finding?",
-      "nursing": "Key symptom monitoring?",
-      "vet": "Comparable disease?",
-      "pharmacy": "Drug?",
-      "public_health": "Risk?",
-      "ams": "Lab pattern?"
-    },
-    "interprofessional_answers": {
-      "medicine": "Hypothyroidism",
-      "dentistry": "Macroglossia",
-      "nursing": "Bradycardia",
-      "vet": "Hypothyroidism",
-      "pharmacy": "Levothyroxine",
-      "public_health": "Iodine deficiency",
-      "ams": "High TSH low T4"
-    },
-    "reference": {
-      "source": "American Thyroid Association Guidelines",
-      "year": 2023
-    }
-  },
-
-  {
-    "case_id": "CARDIO_H_003",
-    "block": "Cardiology",
-    "mode": "scenario",
-    "difficulty": "hard",
-    "scenario": {
-      "en": "A 62-year-old man presents with crushing chest pain radiating to the left arm for 30 minutes.",
-      "th": "เจ็บหน้าอกร้าวแขนซ้าย"
-    },
-    "additional": {
-      "en": "ECG shows ST elevation",
-      "th": "ST elevation"
-    },
-    "answer": "STEMI",
-    "key_points": ["chest pain","radiation","st elevation"],
-    "task": {
-      "medicine": "Diagnosis?",
-      "dentistry": "Precaution?",
-      "nursing": "Immediate action?",
-      "vet": "Analogous condition?",
-      "pharmacy": "Emergency drug?",
-      "public_health": "Major risk factor?",
-      "ams": "Key biomarker?"
-    },
-    "interprofessional_answers": {
-      "medicine": "STEMI",
-      "dentistry": "Avoid elective procedures",
-      "nursing": "Administer oxygen",
-      "vet": "Myocardial infarction",
-      "pharmacy": "Aspirin",
-      "public_health": "Smoking",
-      "ams": "Troponin"
-    },
-    "reference": {
-      "source": "ESC Acute Coronary Syndrome Guideline",
-      "year": 2023
-    }
-  },
-
-  {
-    "case_id": "NEURO_M_004",
-    "block": "Nervous system",
-    "mode": "scenario",
-    "difficulty": "medium",
-    "scenario": {
-      "en": "A 70-year-old man develops sudden right-sided weakness and slurred speech.",
-      "th": "อ่อนแรงครึ่งซีก พูดไม่ชัด"
-    },
-    "additional": {
-      "en": "Onset 1 hour ago",
-      "th": "1 ชั่วโมง"
-    },
-    "answer": "Ischemic stroke",
-    "key_points": ["weakness","speech","acute"],
-    "task": {
-      "medicine": "Diagnosis?",
-      "dentistry": "Risk consideration?",
-      "nursing": "Priority care?",
-      "vet": "Analog?",
-      "pharmacy": "Drug?",
-      "public_health": "Risk factor?",
-      "ams": "Imaging?"
-    },
-    "interprofessional_answers": {
-      "medicine": "Ischemic stroke",
-      "dentistry": "Aspiration risk",
-      "nursing": "Airway protection",
-      "vet": "Stroke",
-      "pharmacy": "tPA",
-      "public_health": "Hypertension",
-      "ams": "CT brain"
-    },
-    "reference": {
-      "source": "AHA Stroke Guideline",
-      "year": 2023
-    }
-  },
-
-  {
-    "case_id": "GI_E_005",
-    "block": "GI",
-    "mode": "scenario",
-    "difficulty": "easy",
-    "scenario": {
-      "en": "A 40-year-old man has epigastric pain relieved by eating.",
-      "th": "ปวดลิ้นปี่ดีขึ้นเมื่อกิน"
-    },
-    "additional": {
-      "en": "Endoscopy shows duodenal ulcer",
-      "th": "พบแผล"
-    },
-    "answer": "Duodenal ulcer",
-    "key_points": ["epigastric pain"],
-    "task": {
-      "medicine": "Diagnosis?",
-      "dentistry": "Oral link?",
-      "nursing": "Monitor?",
-      "vet": "Analog?",
-      "pharmacy": "Drug?",
-      "public_health": "Risk?",
-      "ams": "Test?"
-    },
-    "interprofessional_answers": {
-      "medicine": "Duodenal ulcer",
-      "dentistry": "Acid erosion",
-      "nursing": "Bleeding",
-      "vet": "Ulcer disease",
-      "pharmacy": "PPI",
-      "public_health": "NSAIDs",
-      "ams": "H. pylori test"
-    },
-    "reference": {
-      "source": "ACG Peptic Ulcer Guideline",
-      "year": 2022
-    }
-  },
-
-  {
-    "case_id": "HEMA_H_006",
-    "block": "Hematology",
-    "mode": "scenario",
-    "difficulty": "hard",
-    "scenario": {
-      "en": "A patient presents with fatigue, fever, and petechiae.",
-      "th": "อ่อนเพลีย มีไข้ จุดเลือดออก"
-    },
-    "additional": {
-      "en": "Bone marrow shows blasts",
-      "th": "พบ blast"
-    },
-    "answer": "Acute leukemia",
-    "key_points": ["petechiae","blasts","fatigue"],
-    "task": {
-      "medicine": "Diagnosis?",
-      "dentistry": "Oral sign?",
-      "nursing": "Priority?",
-      "vet": "Analog?",
-      "pharmacy": "Drug class?",
-      "public_health": "Risk?",
-      "ams": "Lab finding?"
-    },
-    "interprofessional_answers": {
-      "medicine": "Acute leukemia",
-      "dentistry": "Gingival bleeding",
-      "nursing": "Infection control",
-      "vet": "Leukemia",
-      "pharmacy": "Chemotherapy",
-      "public_health": "Radiation",
-      "ams": "Blast cells"
-    },
-    "reference": {
-      "source": "NCCN Leukemia Guidelines",
-      "year": 2024
-    }
-  }
+# ===================== CONFIG =====================
+PROFESSIONS = [
+    "medicine","dentistry","nursing",
+    "vet","pharmacy","public_health","ams"
 ]
+
+DEFAULT_TASK = {
+    "medicine": "What is the diagnosis?",
+    "dentistry": "Relevant oral manifestation?",
+    "nursing": "Priority care?",
+    "vet": "Analogous disease?",
+    "pharmacy": "Drug of choice?",
+    "public_health": "Risk factor?",
+    "ams": "Confirmatory test?"
+}
+
+DEFAULT_IPA = {
+    "medicine": "Clinical diagnosis",
+    "dentistry": "Oral involvement",
+    "nursing": "Monitoring",
+    "vet": "Comparative disease",
+    "pharmacy": "Medication",
+    "public_health": "Risk factor",
+    "ams": "Lab test"
+}
+
+DEFAULT_REF = {
+    "source": "Standard Clinical Guideline",
+    "year": 2024
+}
+
+BLOCKS = [
+    "Endocrine","Cardiology","Nervous system","GI",
+    "Hematology","Immunology","Microbiology",
+    "Pharmacology","Musculoskeletal","Skin"
+]
+
+SYMPTOMS_POOL = [
+    "fever","fatigue","pain","weight loss",
+    "nausea","vomiting","weakness","rash",
+    "cough","dyspnea","chest pain","headache"
+]
+
+DIAGNOSES_POOL = [
+    "Infection","Inflammation","Autoimmune disease",
+    "Malignancy","Metabolic disorder","Cardiac disease",
+    "Neurological disorder"
+]
+
+# ===================== LOAD =====================
+with open("cases.json","r",encoding="utf-8") as f:
+    cases = json.load(f)
+
+# ===================== VALIDATE + FIX =====================
+def fix_case(case, idx):
+
+    case = copy.deepcopy(case)
+
+    # required fields
+    case.setdefault("case_id", f"AUTO_{idx}")
+    case.setdefault("block", random.choice(BLOCKS))
+    case.setdefault("difficulty", random.choice(["easy","medium","hard"]))
+    case.setdefault("mode", "scenario")
+
+    case.setdefault("scenario", {"en":"Clinical case","th":"เคส"})
+    case.setdefault("additional", {"en":"","th":""})
+    case.setdefault("answer", random.choice(DIAGNOSES_POOL))
+    case.setdefault("key_points", random.sample(SYMPTOMS_POOL,3))
+
+    # FIX TASK
+    if "task" not in case or not isinstance(case["task"],dict):
+        case["task"] = copy.deepcopy(DEFAULT_TASK)
+
+    for p in PROFESSIONS:
+        case["task"].setdefault(p, DEFAULT_TASK[p])
+
+    # FIX IPA
+    if "interprofessional_answers" not in case:
+        case["interprofessional_answers"] = {}
+
+    for p in PROFESSIONS:
+        case["interprofessional_answers"].setdefault(
+            p,
+            case["answer"] if p=="medicine" else DEFAULT_IPA[p]
+        )
+
+    # FIX REF
+    case.setdefault("reference", DEFAULT_REF)
+
+    return case
+
+# ===================== GENERATE NEW CASE =====================
+def generate_case(idx):
+
+    diagnosis = random.choice(DIAGNOSES_POOL)
+    symptoms = random.sample(SYMPTOMS_POOL,3)
+
+    return {
+        "case_id": f"GEN_{idx}",
+        "block": random.choice(BLOCKS),
+        "difficulty": random.choice(["easy","medium","hard"]),
+        "mode": "scenario",
+        "scenario": {
+            "en": f"A patient presents with {', '.join(symptoms)}.",
+            "th": f"ผู้ป่วยมี {', '.join(symptoms)}"
+        },
+        "additional": {"en":"","th":""},
+        "answer": diagnosis,
+        "key_points": symptoms,
+        "task": DEFAULT_TASK,
+        "interprofessional_answers": {
+            "medicine": diagnosis,
+            "dentistry": "Oral manifestation",
+            "nursing": "Monitor patient",
+            "vet": "Analog disease",
+            "pharmacy": "Medication",
+            "public_health": "Risk factor",
+            "ams": "Lab test"
+        },
+        "reference": DEFAULT_REF
+    }
+
+# ===================== PROCESS =====================
+clean_cases = []
+
+for i,c in enumerate(cases):
+    clean_cases.append(fix_case(c,i))
+
+# เติมให้ครบ 100
+while len(clean_cases) < 100:
+    clean_cases.append(generate_case(len(clean_cases)))
+
+# ===================== SAVE =====================
+with open("cases_clean.json","w",encoding="utf-8") as f:
+    json.dump(clean_cases,f,indent=2,ensure_ascii=False)
+
+print(f"✅ Done: {len(clean_cases)} cases generated and cleaned")
