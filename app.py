@@ -69,7 +69,7 @@ if "ai_feedback" not in st.session_state: st.session_state.ai_feedback = ""
 
 # ===================== 5. SIDEBAR =====================
 with st.sidebar:
-    st.title("ACLR Platform v9.5")
+    st.title("Adaptive Cognitive Load–Driven AI Clinical Reasoning Loop (ACLR)")
     menu = st.radio("Main Menu", ["📖 Manual & Standards", "🧪 Clinical Simulator", "🏆 Analytics Hub"])
     st.divider()
     user_name = st.text_input("👤 Practitioner Name", "User_01")
