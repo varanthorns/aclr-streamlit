@@ -306,3 +306,29 @@ elif menu == "🏆 Analytics Hub":
 
 st.markdown("---")
 st.caption("ACLR Global v9.9.5 | Adaptive Cognitive Load–Driven AI Clinical Reasoning Loop | © 2026")
+# --- 🚀 EXTRA MODULES: SBAR & REASONING MAP (Add this at the end of Simulator Page) ---
+
+if menu == "🧪 Clinical Simulator" and not st.session_state.submitted:
+    st.divider()
+    st.subheader("🧩 Advanced Clinical Analysis (Bonus Points)")
+    
+    # 1. Reasoning Map Section
+    with st.expander("🧠 Phase 1: Clinical Mapping (Data Synthesis)"):
+        c1, c2 = st.columns(2)
+        pos_f = c1.text_area("Pertinent Positives (+)", placeholder="List signs/labs that support your Dx...")
+        neg_f = c2.text_area("Pertinent Negatives (-)", placeholder="List absent signs that rule out other Dx...")
+        st.caption("AI will evaluate how well you filter 'Signal' from 'Noise'.")
+
+    # 2. Professional Handover Section
+    with st.expander("🗣️ Phase 2: SBAR Handover (Communication)"):
+        st.write("Summarize this case for the attending physician.")
+        h_s = st.text_input("Situation", placeholder="What is happening right now?")
+        h_b = st.text_input("Background", placeholder="What is the clinical context/history?")
+        h_a = st.text_area("Assessment", placeholder="What is your analysis of the situation?")
+        h_r = st.text_area("Recommendation", placeholder="What is your proposed immediate plan?")
+        
+    st.info("💡 Complete these sections to receive 'Elite Consultant' feedback from AI.")
+
+# --- 🧪 UPDATE: AI PROMPT ENHANCEMENT ---
+# (หมายเหตุ: ควรไปปรับแก้ฟังก์ชัน get_ai_feedback เดิมให้รับค่าเหล่านี้เข้าไปตรวจด้วย 
+# เพื่อให้ AI ตรวจสอบ 'กระบวนการคิด' ไม่ใช่แค่ 'คำตอบสุดท้าย')
