@@ -60,24 +60,45 @@ def load_cases():
             return json.load(f)
     return [{"block":"General", "difficulty":"medium", "scenario":{"en":"Sample Case Loaded"}, "answer":"N/A"}]
 
-cases = load_cases()
+all_cases = load_cases()
 
 # ===================== 4. SESSION STATE =====================
-if "case" not in st.session_state: st.session_state.case = cases[0]
+if "case" not in st.session_state: st.session_state.case = all_cases[0]
 if "submitted" not in st.session_state: st.session_state.submitted = False
 if "ai_feedback" not in st.session_state: st.session_state.ai_feedback = ""
 
-# ===================== 5. SIDEBAR =====================
+# ===================== 5. SIDEBAR & FILTERS =====================
 with st.sidebar:
-    st.title("ACLR Platform")
+    st.image("https://cdn-icons-png.flaticon.com/512/2413/2413004.png", width=70) 
+    st.title("ACLR Platform v9.9")
     menu = st.radio("Main Menu", ["📖 Manual & Standards", "🧪 Clinical Simulator", "🏆 Analytics Hub"])
     st.divider()
+    
+    # Session User Settings
     user_name = st.text_input("👤 Practitioner Name", "User_01")
     profession = st.selectbox("👩‍⚕️ Clinical Role", ["Doctor", "Pharmacy", "Nursing", "AMS", "Dentistry", "Vet", "Public Health"]).lower()
     
+    st.divider()
+    # Filter Settings
+    st.subheader("🎯 Session Filters")
+    available_blocks = sorted(list(set([c['block'] for c in all_cases])))
+    filter_block = st.selectbox("Select Block", ["All Blocks"] + available_blocks)
+    filter_diff = st.select_slider("Select Difficulty", options=["easy", "medium", "hard"], value="medium")
+
     if menu == "🧪 Clinical Simulator":
-        if st.button("🔄 Next Clinical Case"):
-            st.session_state.case = random.choice(cases)
+        if st.button("🔄 Generate Filtered Case"):
+            # Filter Logic
+            pool = all_cases
+            if filter_block != "All Blocks":
+                pool = [c for c in pool if c['block'] == filter_block]
+            pool = [c for c in pool if c['difficulty'] == filter_diff]
+            
+            if pool:
+                st.session_state.case = random.choice(pool)
+            else:
+                st.warning(f"No {filter_diff} cases in {filter_block}. Picked random.")
+                st.session_state.case = random.choice(all_cases)
+                
             st.session_state.submitted = False
             st.session_state.ai_feedback = ""
             st.rerun()
@@ -87,54 +108,36 @@ with st.sidebar:
 # --- 📖 MANUAL & STANDARDS ---
 if menu == "📖 Manual & Standards":
     st.header("📖 Clinical Operations Manual")
-    
     st.subheader("1. System Workflow")
-    st.markdown("1. Initialization | 2. Analysis | 3. Professional Formulation | 4. Management Plan | 5. AI Debrief")
-
+    st.markdown("1. Filter & Initialize | 2. Clinical Data Analysis | 3. Professional Entry | 4. AI Feedback Loop")
     st.divider()
-    st.subheader("2. Scoring & Grading Criteria (10-Point Scale)")
-    c_g1, c_g2 = st.columns(2)
-    with c_g1:
-        st.info("**Diagnosis Accuracy (4 pts)**\n- Direct alignment with professional gold standards.")
-        st.success("**Clinical Rationale (3 pts)**\n- Depth of pathophysiological explanation.")
-    with c_g2:
-        st.warning("**Safety & Disposition (2 pts)**\n- Correct choice of intervention and care level.")
-        st.error("**Risk Mitigation (1 pt)**\n- Identification of critical red flags.")
-
-    st.divider()
-    st.subheader("3. Professional Focus Areas")
-    g_tabs = st.tabs(["Doctor", "Pharmacy", "Nursing", "AMS", "Dentistry", "Vet", "Public Health"])
-    with g_tabs[0]: st.markdown("**Focus:** Differential Diagnosis and definitive medical intervention.")
-    with g_tabs[1]: st.markdown("**Focus:** Medication safety, dosing accuracy, and drug interactions.")
-    with g_tabs[2]: st.markdown("**Focus:** Vital sign monitoring and immediate safety interventions.")
-    with g_tabs[3]: st.markdown("**Focus:** Laboratory result validity and specialized diagnostic testing.")
-    with g_tabs[4]: st.markdown("**Focus:** Oral-systemic risk and pre-procedural dental clearance.")
-    with g_tabs[5]: st.markdown("**Focus:** Zoonotic control and comparative pathology.")
-    with g_tabs[6]: st.markdown("**Focus:** Population health and epidemiological prevention.")
-
+    st.subheader("2. Scoring (10-Point Scale)")
+    st.info("Dx Accuracy (4), Rationale (3), Safety (2), Risk (1)")
     st.divider()
     st.subheader("📚 Clinical References")
-    st.markdown("""
-    - **AHA/ACC Guidelines** | Cardiovascular Protocols
-    - **IDSA Guidelines** | Infectious Disease Management
-    - **KDIGO** | Renal Clinical Practice
-    - **Harrison's Principles of Internal Medicine (21st Ed)**
-    """)
+    st.markdown("- AHA/ACC, IDSA, KDIGO, Harrison's Principles of Internal Medicine.")
 
 # --- 🧪 CLINICAL SIMULATOR ---
 elif menu == "🧪 Clinical Simulator":
     c = st.session_state.case
-    st.title(f"🏥 Simulation: {c.get('block')} | {c.get('difficulty').upper()}")
+    st.title(f"🏥 Simulation: {c.get('block')} | Level: {c.get('difficulty').upper()}")
     
     col_main, col_info = st.columns([2, 1])
     with col_main:
-        t1, t2, t3 = st.tabs(["📋 Scenario", "🧪 Diagnostic Data", "✍️ Professional Entry"])
+        # UPDATED: Merged Scenario and Labs into one tab, Entry in another
+        t1, t2 = st.tabs(["📋 Clinical Case Details", "✍️ Professional Entry"])
+        
         with t1:
+            st.subheader("Patient Scenario")
             st.info(c.get('scenario', {}).get('en', 'No data.'))
+            
+            st.subheader("Laboratory & Diagnostic Data")
+            if c.get("labs"): 
+                st.table(pd.DataFrame(c["labs"]))
+            else: 
+                st.warning("No diagnostic labs provided for this case.")
+        
         with t2:
-            if c.get("labs"): st.table(pd.DataFrame(c["labs"]))
-            else: st.warning("No diagnostic labs provided.")
-        with t3:
             st.markdown(f"### 🧬 Professional Entry: {profession.upper()}")
             
             # --- SHARED FIELDS ---
@@ -144,42 +147,35 @@ elif menu == "🧪 Clinical Simulator":
             role_info = ""
             if profession == "doctor":
                 ddx_in = st.multiselect("🔍 Differential Diagnosis (DDx)", ["Sepsis", "MI", "Aortic Dissection", "Pneumonia", "Infective Endocarditis", "Stroke"])
-                plan_detail = st.text_input("💊 Definitive Treatment Plan (e.g., Surgery, Specific Antibiotic)")
+                plan_detail = st.text_input("💊 Definitive Treatment Plan")
                 role_info = f"DDx: {ddx_in}, Plan: {plan_detail}"
-                
             elif profession == "pharmacy":
-                dosing = st.text_input("⚖️ Suggested Dosing (e.g., based on CrCl/Weight)")
-                interaction = st.text_input("⚠️ Potential Drug Interactions observed")
+                dosing = st.text_input("⚖️ Suggested Dosing Logic")
+                interaction = st.text_input("⚠️ Potential Drug Interactions")
                 role_info = f"Dosing: {dosing}, Interaction: {interaction}"
-                
             elif profession == "nursing":
-                vitals_focus = st.multiselect("📉 Critical Vitals to Monitor", ["BP/MAP", "SpO2", "Temperature", "GCS", "Heart Rate"])
+                vitals_focus = st.multiselect("📉 Watch Vitals", ["BP", "SpO2", "Temp", "GCS", "HR"])
                 nursing_care = st.text_input("🛌 Immediate Nursing Intervention")
-                role_info = f"Vitals to watch: {vitals_focus}, Intervention: {nursing_care}"
-                
+                role_info = f"Vitals: {vitals_focus}, Nursing Care: {nursing_care}"
             elif profession == "ams":
-                lab_validity = st.selectbox("🧪 Result Validity", ["Reliable", "Needs Repeat", "Interfered by Hemolysis/Clot"])
-                add_on = st.text_input("🔬 Suggested Add-on Diagnostic Tests")
-                role_info = f"Validity: {lab_validity}, Suggested Tests: {add_on}"
-                
+                lab_validity = st.selectbox("🧪 Result Validity", ["Reliable", "Needs Repeat", "Interfered"])
+                add_on = st.text_input("🔬 Suggested Add-on Tests")
+                role_info = f"Validity: {lab_validity}, Tests: {add_on}"
             elif profession == "dentistry":
-                oral_risk = st.text_input("🦷 Oral-Systemic Link (e.g., Infection source?)")
-                pre_op = st.selectbox("⚠️ Pre-procedural Risk", ["Low", "Moderate", "High (Defer)"])
-                role_info = f"Oral Link: {oral_risk}, Risk Level: {pre_op}"
-            
+                oral_risk = st.text_input("🦷 Oral-Systemic Link")
+                pre_op = st.selectbox("⚠️ Pre-procedural Risk", ["Low", "Moderate", "High"])
+                role_info = f"Oral Link: {oral_risk}, Risk: {pre_op}"
             elif profession == "vet":
                 zoonotic = st.selectbox("🐾 Zoonotic Potential", ["Yes", "No", "Suspected"])
-                comp_path = st.text_input("🔬 Comparative Pathophysiology Note")
-                role_info = f"Zoonotic: {zoonotic}, Comp Path: {comp_path}"
-                
+                comp_path = st.text_input("🔬 Comparative Pathology")
+                role_info = f"Zoonotic: {zoonotic}, CompPath: {comp_path}"
             elif profession == "public health":
-                outbreak = st.selectbox("🌏 Outbreak Risk", ["Low", "High (Requires Reporting)"])
-                prev_strat = st.text_input("🛡️ Community Prevention Strategy")
+                outbreak = st.selectbox("🌏 Outbreak Risk", ["Low", "High"])
+                prev_strat = st.text_input("🛡️ Prevention Strategy")
                 role_info = f"Outbreak: {outbreak}, Strategy: {prev_strat}"
 
             # --- SHARED RATIONALE & DISPO ---
-            re_in = st.text_area("✍️ Pathophysiological Rationale", placeholder="Explain the clinical logic...", height=120)
-            
+            re_in = st.text_area("✍️ Pathophysiological Rationale", placeholder="Explain your logic...", height=120)
             c_p1, c_p2 = st.columns(2)
             u_step = c_p1.selectbox("Immediate Next Step", ["Observation", "Emergency Procedure", "Start Medication", "Imaging/Biopsy", "Specialist Consult"])
             u_dispo = c_p2.selectbox("Patient Disposition", ["Admit ICU/CCU", "Admit General Ward", "Discharge with Follow-up"])
@@ -187,12 +183,10 @@ elif menu == "🧪 Clinical Simulator":
 
             if st.button("🚀 SUBMIT CLINICAL DECISION"):
                 if dx_in and re_in:
-                    full_reasoning = f"Context: {role_info}. Rationale: {re_in}. confidence: {u_conf}%"
-                    score = random.randint(8, 10) 
-                    save_score_local(user_name, profession, score, c.get('block'))
+                    full_reasoning = f"Role Details: {role_info}. Rationale: {re_in}. Confidence: {u_conf}%"
+                    save_score_local(user_name, profession, random.randint(8, 10), c.get('block'))
                     target = c.get('interprofessional_answers', {}).get(profession, c.get('answer'))
-                    
-                    with st.spinner("AI Mentor is synthesizing your interprofessional response..."):
+                    with st.spinner("AI Mentor is analyzing..."):
                         st.session_state.ai_feedback = get_ai_feedback(dx_in, full_reasoning, target, profession)
                     st.session_state.submitted = True
                     st.rerun()
@@ -223,7 +217,7 @@ elif menu == "🏆 Analytics Hub":
         c3.metric("Top Role", df.groupby('Role')['Score'].mean().idxmax())
         st.bar_chart(df.groupby('Role')['Score'].mean())
     else:
-        st.info("No data yet.")
+        st.info("No simulation data available yet.")
 
 st.markdown("---")
-st.caption("ACLR Global v9.5 | Professional Clinical Simulation | © 2026")
+st.caption("ACLR Global v9.9 | Adaptive Cognitive Load–Driven AI Clinical Reasoning Loop | © 2026")
