@@ -289,7 +289,22 @@ elif menu == "🧪 Clinical Simulator":
         with res_r:
             st.subheader("🎯 Benchmarks")
             st.success(f"**Gold Standard:** {c.get('answer')}")
-
+        # --- ส่วนที่เขียนเพิ่ม ---
+            st.divider()
+            st.markdown("#### 🌐 Multidisciplinary Insights")
+            st.write("จะเกิดอะไรขึ้นถ้าวิชาชีพอื่นดูแลเคสนี้?")
+            
+            # ดึงข้อมูลคำตอบของวิชาชีพอื่นมาโชว์
+            ips = c.get('interprofessional_answers', {})
+            
+            if ips:
+                # ใช้ Tabs เพื่อประหยัดพื้นที่และแยกมุมมองชัดเจน
+                cols = st.tabs([role.upper() for role in ips.keys()])
+                for idx, (role, perspective) in enumerate(ips.items()):
+                    with cols[idx]:
+                        st.info(f"**{role.capitalize()}'s Focus:** {perspective}")
+            else:
+                st.caption("No interprofessional data available for this case.")
 # --- 🏆 ANALYTICS HUB ---
 elif menu == "🏆 Analytics Hub":
     st.header("🏆 Performance Analytics Dashboard")
