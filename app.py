@@ -53,7 +53,7 @@ if "ai_feedback" not in st.session_state: st.session_state.ai_feedback = ""
 
 # ===================== 5. SIDEBAR & FILTERS =====================
 with st.sidebar:
-    st.title("ACLR Platform v9.9")
+    st.title("ACLR Platform v9.9.1")
     menu = st.radio("Main Menu", ["📖 Manual & Standards", "🧪 Clinical Simulator", "🏆 Analytics Hub"])
     st.divider()
     user_name = st.text_input("👤 Practitioner Name", "User_01")
@@ -77,106 +77,117 @@ with st.sidebar:
 
 # ===================== 6. PAGES =====================
 
-# --- 📖 MANUAL & STANDARDS (NEW UPGRADED) ---
+# --- 📖 MANUAL & STANDARDS ---
 if menu == "📖 Manual & Standards":
     st.header("📖 Clinical Operations & User Guide")
-    st.markdown("### **ACLR Platform**")
-    st.write("*Adaptive Cognitive Load–Driven AI Clinical Reasoning Loop*")
+    st.markdown("### **ACLR Platform v9.9.1**")
     
-    # --- SECTION 1: SYSTEM PHILOSOPHY ---
     with st.expander("🌐 1. System Philosophy & Objectives", expanded=True):
         st.markdown("""
         <div style="background-color: #E3F2FD; padding: 20px; border-radius: 10px; border-left: 5px solid #1976D2;">
-            <h4 style="color: #1976D2;">Core Objective</h4>
-            <p>To bridge the gap between medical theory and bedside practice by simulating high-fidelity clinical scenarios. 
-            The system manages <b>Cognitive Load</b> by filtering content into blocks and difficulty levels, allowing learners to focus on specific clinical reasoning pathways.</p>
+            <h4 style="color: #1976D2;">Core Objective | วัตถุประสงค์หลัก</h4>
+            <p>To bridge the gap between medical theory and bedside practice. The system manages <b>Cognitive Load</b> by filtering complex clinical data.</p>
         </div>
         """, unsafe_allow_html=True)
-        st.write("")
 
-    # --- SECTION 2: WORKFLOW STEPS ---
-    st.divider()
-    st.subheader("🚀 2. Operational Workflow (How to Play)")
-    
+    st.subheader("🚀 2. Operational Workflow")
     w1, w2, w3 = st.columns(3)
     with w1:
-        st.markdown("""
-        <div style="background-color: #FFF3E0; padding: 15px; border-radius: 10px; min-height: 250px;">
-            <h4 style="color: #E65100;">Step 1: Calibration</h4>
-            <p><b>Configuration:</b></p>
-            <ul>
-                <li>Enter your <b>Practitioner Name</b>.</li>
-                <li>Select <b>Clinical Role</b> to activate specialized input fields.</li>
-                <li>Apply <b>Block Filters</b> (e.g., Cardio) and <b>Difficulty</b>.</li>
-                <li>Click <b>'Generate Filtered Case'</b>.</li>
-            </ul>
-        </div>
-        """, unsafe_allow_html=True)
-        
+        st.markdown("<div style='background-color: #FFF3E0; padding: 20px; border-radius: 10px; min-height: 250px;'><h4>Step 1: Calibration</h4><p>Set Role, Block, and Difficulty in sidebar.</p></div>", unsafe_allow_html=True)
     with w2:
-        st.markdown("""
-        <div style="background-color: #E8F5E9; padding: 15px; border-radius: 10px; min-height: 250px;">
-            <h4 style="color: #2E7D32;">Step 2: Analysis</h4>
-            <p><b>Data Synthesis:</b></p>
-            <ul>
-                <li>Read the <b>Patient Scenario</b> carefully.</li>
-                <li>Interpret <b>Diagnostic Data</b> (Labs/Imaging) provided in the table.</li>
-                <li>Identify <b>Red Flags</b> and key clinical indicators.</li>
-            </ul>
-        </div>
-        """, unsafe_allow_html=True)
-
+        st.markdown("<div style='background-color: #E8F5E9; padding: 20px; border-radius: 10px; min-height: 250px;'><h4>Step 2: Synthesis</h4><p>Analyze Scenario and Lab results in the Simulator.</p></div>", unsafe_allow_html=True)
     with w3:
-        st.markdown("""
-        <div style="background-color: #F3E5F5; padding: 15px; border-radius: 10px; min-height: 250px;">
-            <h4 style="color: #7B1FA2;">Step 3: Execution</h4>
-            <p><b>Clinical Entry:</b></p>
-            <ul>
-                <li>Formulate your <b>Diagnosis</b> and <b>Rationale</b>.</li>
-                <li>Complete <b>Role-Specific</b> tasks (e.g., Dosing for Pharmacy).</li>
-                <li>Submit for <b>AI Mentor Debriefing</b>.</li>
-            </ul>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown("<div style='background-color: #F3E5F5; padding: 20px; border-radius: 10px; min-height: 250px;'><h4>Step 3: Execution</h4><p>Submit Diagnosis and Rationale for AI evaluation.</p></div>", unsafe_allow_html=True)
 
-    # --- SECTION 3: DYNAMIC LOGIC ---
     st.divider()
     st.subheader("🧬 3. Interprofessional Dynamic Logic")
-    st.write("Each role faces different 'Cognitive Loads'. The UI adapts to reflect your real-world responsibilities:")
-    
+    st.write("UI adapts to reflect your real-world responsibilities:")
     r1, r2 = st.columns(2)
     with r1:
-        st.markdown("""
-        - <b style="color:#1976D2;">Doctor/Dentist:</b> Focus on <i>Differential Diagnosis (DDx)</i> and definitive treatment.
-        - <b style="color:#D32F2F;">Pharmacy:</b> Focus on <i>Pharmacotherapy</i>, safety, and precise dosing.
-        - <b style="color:#388E3C;">Nursing:</b> Focus on <i>Vitals Monitoring</i> and immediate patient stabilization.
-        """, unsafe_allow_html=True)
+        st.markdown("- <b style='color:#1976D2;'>Doctor/Dentist:</b> Focus on DDx & Treatment.", unsafe_allow_html=True)
+        st.markdown("- <b style='color:#D32F2F;'>Pharmacy:</b> Focus on Dosing & Interaction.", unsafe_allow_html=True)
     with r2:
-        st.markdown("""
-        - <b style="color:#FBC02D;">AMS:</b> Focus on <i>Lab Integrity</i> and recommending advanced diagnostics.
-        - <b style="color:#7B1FA2;">Public Health/Vet:</b> Focus on <i>Population Safety</i> and epidemiological links.
-        """, unsafe_allow_html=True)
-
-    # --- SECTION 4: SCORING ---
-    st.divider()
-    st.subheader("📊 4. Scoring & AI Evaluation Matrix")
-    
-    st.markdown("""
-    | Criteria | Weight | Description |
-    | :--- | :--- | :--- |
-    | **Clinical Accuracy** | 40% | Is the diagnosis aligned with the Gold Standard? |
-    | **Logical Rationale** | 30% | Does the pathophysiological explanation make sense? |
-    | **Patient Safety** | 20% | Is the disposition (ICU/Ward) and next step appropriate? |
-    | **Risk Management** | 10% | Were confidence levels and red flags acknowledged? |
-    """)
-    
-    st.info("""
-    💡 **AI Mentor Feedback:** Powered by Google Gemini 1.5 Flash. 
-    It doesn't just score; it provides **'Professional Pearls'**—nuggets of wisdom that help you think like a Senior Consultant.
-    """)
+        st.markdown("- <b style='color:#388E3C;'>Nursing:</b> Focus on Vitals & Stabilization.", unsafe_allow_html=True)
+        st.markdown("- <b style='color:#7B1FA2;'>AMS/Public Health:</b> Focus on Labs & Outbreak.", unsafe_allow_html=True)
 
     st.divider()
-    st.caption("Educational Reference Standards: Harrison's Principles of Internal Medicine, UpToDate, and WHO Clinical Protocols.")
+    st.subheader("📊 4. Scoring Matrix")
+    st.markdown("| Criteria | Weight | Description |\n| :--- | :--- | :--- |\n| **Accuracy** | 40% | Gold Standard alignment |\n| **Rationale** | 30% | Pathophysiology logic |\n| **Safety** | 20% | Disposition & Next Steps |\n| **Professional** | 10% | Risk awareness |")
+
+# --- 🧪 CLINICAL SIMULATOR ---
+elif menu == "🧪 Clinical Simulator":
+    c = st.session_state.case
+    st.title(f"🏥 Simulation: {c.get('block')} | Level: {c.get('difficulty').upper()}")
+    
+    col_main, col_info = st.columns([2, 1])
+    with col_main:
+        t1, t2 = st.tabs(["📋 Clinical Case Details", "✍️ Professional Entry"])
+        with t1:
+            st.subheader("Patient Scenario & Diagnostic Data")
+            st.info(c.get('scenario', {}).get('en', 'No data.'))
+            if c.get("labs"): st.table(pd.DataFrame(c["labs"]))
+            else: st.warning("No diagnostic labs provided.")
+        
+        with t2:
+            st.markdown(f"### 🧬 Professional Entry: {profession.upper()}")
+            dx_in = st.text_input("🩺 Final Assessment / Diagnosis")
+            
+            # --- DYNAMIC FIELDS ---
+            role_info = ""
+            if profession == "doctor":
+                ddx = st.multiselect("🔍 DDx", ["Sepsis", "MI", "Stroke", "IE", "Pneumonia"])
+                plan = st.text_input("💊 Treatment Plan")
+                role_info = f"DDx: {ddx}, Plan: {plan}"
+            elif profession == "pharmacy":
+                dosing = st.text_input("⚖️ Dosing Logic")
+                interaction = st.text_input("⚠️ Interactions")
+                role_info = f"Dosing: {dosing}, Interaction: {interaction}"
+            elif profession == "nursing":
+                vitals = st.multiselect("📉 Watch Vitals", ["BP", "SpO2", "Temp", "GCS"])
+                n_care = st.text_input("🛌 Nursing Intervention")
+                role_info = f"Vitals: {vitals}, Care: {n_care}"
+            elif profession == "ams":
+                valid = st.selectbox("🧪 Validity", ["Reliable", "Needs Repeat", "Interfered"])
+                tests = st.text_input("🔬 Add-on Tests")
+                role_info = f"Validity: {valid}, Tests: {tests}"
+            elif profession == "dentistry":
+                oral = st.text_input("🦷 Oral-Systemic Link")
+                risk = st.selectbox("⚠️ Risk", ["Low", "Moderate", "High"])
+                role_info = f"Link: {oral}, Risk: {risk}"
+            elif profession == "vet":
+                zoo = st.selectbox("🐾 Zoonotic?", ["Yes", "No", "Suspected"])
+                path = st.text_input("🔬 Comp Path Note")
+                role_info = f"Zoo: {zoo}, Path: {path}"
+            elif profession == "public health":
+                out = st.selectbox("🌏 Outbreak?", ["Low", "High"])
+                prev = st.text_input("🛡️ Prevention")
+                role_info = f"Outbreak: {out}, Prev: {prev}"
+
+            re_in = st.text_area("✍️ Pathophysiological Rationale", height=120)
+            c_p1, c_p2 = st.columns(2)
+            u_step = c_p1.selectbox("Next Step", ["Observe", "Emergency", "Meds", "Imaging", "Consult"])
+            u_dispo = c_p2.selectbox("Disposition", ["ICU/CCU", "General Ward", "Discharge"])
+            u_conf = st.slider("Confidence (%)", 0, 100, 80)
+
+            if st.button("🚀 SUBMIT CLINICAL DECISION"):
+                if dx_in and re_in:
+                    full_re = f"Role Details: {role_info}. Rationale: {re_in}. Confidence: {u_conf}%"
+                    save_score_local(user_name, profession, random.randint(8, 10), c.get('block'))
+                    target = c.get('interprofessional_answers', {}).get(profession, c.get('answer'))
+                    with st.spinner("AI Mentor Analyzing..."):
+                        st.session_state.ai_feedback = get_ai_feedback(dx_in, full_re, target, profession)
+                    st.session_state.submitted = True
+                    st.rerun()
+
+    if st.session_state.submitted:
+        st.divider()
+        res_l, res_r = st.columns(2)
+        with res_l:
+            st.subheader("🤖 AI Mentor Feedback")
+            st.markdown(st.session_state.ai_feedback)
+        with res_r:
+            st.subheader("🎯 Benchmarks")
+            st.success(f"**Gold Standard:** {c.get('interprofessional_answers', {}).get(profession, c.get('answer'))}")
 
 # --- 🏆 ANALYTICS HUB ---
 elif menu == "🏆 Analytics Hub":
@@ -193,4 +204,4 @@ elif menu == "🏆 Analytics Hub":
     else: st.info("No data yet.")
 
 st.markdown("---")
-st.caption("ACLR Global v9.9 | Adaptive Cognitive Load–Driven AI Clinical Reasoning Loop | © 2026")
+st.caption("ACLR Global v9.9.1 | Professional Clinical Simulation | © 2026")
