@@ -77,7 +77,7 @@ if "evolved" not in st.session_state: st.session_state.evolved = False
 
 # ===================== 5. SIDEBAR & FILTERS =====================
 with st.sidebar:
-    st.title("ACLR Platform v9.9.5")
+    st.title("ACLR Platform")
     menu = st.radio("Main Menu", ["📖 Manual & Standards", "🧪 Clinical Simulator", "🏆 Analytics Hub"])
     st.divider()
     user_name = st.text_input("👤 Practitioner Name", "User_01")
@@ -105,7 +105,7 @@ with st.sidebar:
 # --- 📖 MANUAL & STANDARDS (UPGRADED ENGLISH EDITION) ---
 if menu == "📖 Manual & Standards":
     st.header("📖 Clinical Operations & User Guide")
-    st.markdown("### **ACLR Platform v9.9**")
+    st.markdown("### **ACLR Platform**")
     st.write("*Adaptive Cognitive Load–Driven AI Clinical Reasoning Loop*")
     
     # --- SECTION 1: SYSTEM PHILOSOPHY ---
