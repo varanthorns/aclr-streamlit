@@ -83,7 +83,7 @@ if "voice_text" not in st.session_state:
 
 # ===================== SIDEBAR NAVIGATION =====================
 with st.sidebar:
-    st.title("🚀 ACLR Menu")
+    st.title(" ACLR Menu")
     page = st.radio("Go to Page", ["📖 User Guide & Scoring", "🧪 Clinical Simulator", "🏆 Leaderboard"])
     
     st.divider()
