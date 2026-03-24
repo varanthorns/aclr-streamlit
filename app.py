@@ -377,3 +377,43 @@ with col2:
 st.markdown("---")
 
 st.caption("ACLR Professional v3.0 | 2026 Updated Guidelines") 
+# ===================== PAGE 4: USER GUIDE =====================
+if page == "📖 User Guide & Scoring":
+    st.header("📖 วิธีการใช้งานและเกณฑ์การประเมิน (Manual)")
+    
+    col_a, col_b = st.columns(2)
+    with col_a:
+        st.subheader("💡 ACLR คืออะไร?")
+        st.write("""
+        **ACLR (Advanced Clinical Reasoning)** ออกแบบมาเพื่อก้าวข้ามการสอบแบบตัวเลือก (MCQ) 
+        โดยเน้นการฝึก **Clinical Reasoning** หรือกระบวนการตัดสินใจทางคลินิกเสมือนจริง 
+        แก้ปัญหา 'สอบผ่านแต่รักษาไม่ได้' หรือ 'วินิจฉัยถูกแต่ให้เหตุผลไม่ได้'
+        """)
+        st.markdown("""
+        * **Production Over Recognition:** ต้องพิมพ์คำตอบเอง ไม่มีการตัดช้อยส์
+        * **Interprofessional Collaboration:** เห็นมุมมองของวิชาชีพอื่นในทีมสุขภาพ
+        * **Logic Extraction:** ระบบตรวจจับ 'ตรรกะ' ของการเชื่อมโยงอาการสู่โรค
+        """)
+
+    with col_b:
+        st.subheader("🛠 วิธีใช้งาน")
+        st.write("""
+        1. **Study Scenario:** อ่านสถานการณ์ใน Tab 1 (Scenario)
+        2. **Analyze Labs:** วิเคราะห์ผลแล็บและภาพ EKG/X-ray ใน Tab 2
+        3. **Formulate Dx:** ระบุโรคที่เป็นไปได้มากที่สุด (Differential Diagnosis)
+        4. **Write Reasoning:** อธิบายพยาธิสภาพว่าทำไมถึงคิดว่าเป็นโรคนั้น
+        5. **Submit:** รับ Feedback ทันทีจาก AI Examiner
+        """)
+
+    st.divider()
+    st.subheader("📊 เกณฑ์การให้คะแนน (Scoring Rubric - 10 Points)")
+    rubric = {
+        "หมวดหมู่": ["Diagnosis Accuracy", "Evidence Key Points", "Clinical Logic flow"],
+        "คะแนน": ["5 คะแนน", "3 คะแนน", "2 คะแนน"],
+        "เกณฑ์การประเมิน": [
+            "ความถูกต้องของชื่อโรค (ใช้ AI วัดความใกล้เคียงของความหมาย)",
+            "การระบุหลักฐานสำคัญจากอาการหรือผลแล็บที่โจทย์กำหนด (Key Features)",
+            "การใช้คำเชื่อมแสดงเหตุและผล (เช่น 'เนื่องจาก...', 'ส่งผลให้...')"
+        ]
+    }
+    st.table(pd.DataFrame(rubric))
