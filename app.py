@@ -5,7 +5,7 @@ import google.generativeai as genai
 # ===================== 1. CONFIG & MEDICAL UI =====================
 st.set_page_config(layout="wide", page_title="ACLR Clinical Analytics Platform", page_icon="🩺")
 
-# Medical-Grade CSS Injector
+# Medical-Grade CSS
 st.markdown("""
     <style>
     .main { background-color: #f8f9fa; }
@@ -43,8 +43,8 @@ def get_ai_feedback(user_dx, user_re, target, role):
     model = genai.GenerativeModel('gemini-1.5-flash')
     prompt = f"""
     Act as a Senior Clinical Professor. Evaluate this {role}'s reasoning.
-    Diagnosis: {user_dx} | Rationale: {user_re} | Gold Standard: {target}
-    Provide 3 concise bullet points: 1. Clinical Accuracy 2. Logic Gaps 3. Professional 'Pearl'.
+    Diagnosis: {user_dx} | Rationale & Context: {user_re} | Gold Standard: {target}
+    Provide 3 concise bullet points: 1. Clinical Accuracy 2. Role-specific logic gaps 3. Professional 'Pearl'.
     Language: English.
     """
     try:
@@ -69,10 +69,11 @@ if "ai_feedback" not in st.session_state: st.session_state.ai_feedback = ""
 
 # ===================== 5. SIDEBAR =====================
 with st.sidebar:
-    st.title("ACLR Platform v9.0")
+    st.image("https://cdn-icons-png.flaticon.com/512/2413/2413004.png", width=70) 
+    st.title("ACLR Platform v9.5")
     menu = st.radio("Main Menu", ["📖 Manual & Standards", "🧪 Clinical Simulator", "🏆 Analytics Hub"])
     st.divider()
-    user_name = st.text_input("👤 Practitioner ID/Name", "User_01")
+    user_name = st.text_input("👤 Practitioner Name", "User_01")
     profession = st.selectbox("👩‍⚕️ Clinical Role", ["Doctor", "Pharmacy", "Nursing", "AMS", "Dentistry", "Vet", "Public Health"]).lower()
     
     if menu == "🧪 Clinical Simulator":
@@ -89,81 +90,111 @@ if menu == "📖 Manual & Standards":
     st.header("📖 Clinical Operations Manual")
     
     st.subheader("1. System Workflow")
-    st.markdown("""
-    1. **Initialization:** Select your professional role in the sidebar.
-    2. **Analysis:** Review the patient scenario and diagnostic data (Labs/Imaging).
-    3. **Formulation:** Input your Diagnosis and Pathophysiological Rationale.
-    4. **Management:** Determine the immediate Next Step and Patient Disposition.
-    5. **Evaluation:** Submit to receive **AI-Driven Feedback** and compare with Team Perspectives.
-    """)
+    st.markdown("1. Initialization | 2. Analysis | 3. Professional Formulation | 4. Management Plan | 5. AI Debrief")
 
     st.divider()
     st.subheader("2. Scoring & Grading Criteria (10-Point Scale)")
-    st.write("Your performance is evaluated based on the following weighted metrics:")
-    
-    col_g1, col_g2 = st.columns(2)
-    with col_g1:
-        st.info("**Diagnosis Accuracy (4 pts)**\n- Direct alignment with the gold standard for your specific role.")
-        st.success("**Clinical Rationale (3 pts)**\n- Depth of pathophysiological explanation and use of evidence-based terminology.")
-    with col_g2:
-        st.warning("**Safety & Disposition (2 pts)**\n- Selection of correct 'Next Step' and appropriate level of care (Disposition).")
-        st.error("**Risk Mitigation (1 pt)**\n- Successful identification of 'Must-Exclude' red flags.")
+    c_g1, c_g2 = st.columns(2)
+    with c_g1:
+        st.info("**Diagnosis Accuracy (4 pts)**\n- Direct alignment with professional gold standards.")
+        st.success("**Clinical Rationale (3 pts)**\n- Depth of pathophysiological explanation.")
+    with c_g2:
+        st.warning("**Safety & Disposition (2 pts)**\n- Correct choice of intervention and care level.")
+        st.error("**Risk Mitigation (1 pt)**\n- Identification of critical red flags.")
 
     st.divider()
-    st.subheader("3. Professional Response Guidelines")
-    st.write("Responses must align with professional scopes of practice:")
-    
+    st.subheader("3. Professional Focus Areas")
     g_tabs = st.tabs(["Doctor", "Pharmacy", "Nursing", "AMS", "Dentistry", "Vet", "Public Health"])
-    with g_tabs[0]: st.markdown("**Focus:** Definitive diagnosis, surgical/medical intervention, and primary care plan.")
-    with g_tabs[1]: st.markdown("**Focus:** Pharmacokinetics, drug-drug interactions, and optimal dosing regimens.")
-    with g_tabs[2]: st.markdown("**Focus:** Patient monitoring, early warning signs (EWS), and bedside safety protocols.")
-    with g_tabs[3]: st.markdown("**Focus:** Laboratory methodology, result validity, and diagnostic specificity.")
-    with g_tabs[4]: st.markdown("**Focus:** Odontogenic infections, oral-systemic manifestations, and dental-clearing protocols.")
-    with g_tabs[5]: st.markdown("**Focus:** Zoonotic transmission, comparative pathology, and animal-human health links.")
-    with g_tabs[6]: st.markdown("**Focus:** Epidemiological control, community screening, and preventive health policy.")
+    with g_tabs[0]: st.markdown("**Focus:** Differential Diagnosis and definitive medical intervention.")
+    with g_tabs[1]: st.markdown("**Focus:** Medication safety, dosing accuracy, and drug interactions.")
+    with g_tabs[2]: st.markdown("**Focus:** Vital sign monitoring and immediate safety interventions.")
+    with g_tabs[3]: st.markdown("**Focus:** Laboratory result validity and specialized diagnostic testing.")
+    with g_tabs[4]: st.markdown("**Focus:** Oral-systemic risk and pre-procedural dental clearance.")
+    with g_tabs[5]: st.markdown("**Focus:** Zoonotic control and comparative pathology.")
+    with g_tabs[6]: st.markdown("**Focus:** Population health and epidemiological prevention.")
 
     st.divider()
     st.subheader("📚 Clinical References")
     st.markdown("""
-    All cases and logic patterns are synthesized from the following international guidelines:
-    - **AHA/ACC Guidelines:** Cardiovascular assessment and MI protocols.
-    - **IDSA Guidelines:** Management of Infective Endocarditis and Sepsis.
-    - **KDIGO Guidelines:** Renal monitoring and drug dosing in AKI.
-    - **WHO One Health:** Zoonotic and Public Health frameworks.
-    - **Harrison's Principles of Internal Medicine (21st Ed).**
+    - **AHA/ACC Guidelines** | Cardiovascular Protocols
+    - **IDSA Guidelines** | Infectious Disease Management
+    - **KDIGO** | Renal Clinical Practice
+    - **Harrison's Principles of Internal Medicine (21st Ed)**
     """)
 
 # --- 🧪 CLINICAL SIMULATOR ---
 elif menu == "🧪 Clinical Simulator":
     c = st.session_state.case
-    st.title(f"🏥 Simulation: {c.get('block')} | Level: {c.get('difficulty').upper()}")
+    st.title(f"🏥 Simulation: {c.get('block')} | {c.get('difficulty').upper()}")
     
     col_main, col_info = st.columns([2, 1])
     with col_main:
-        t1, t2, t3 = st.tabs(["📋 Case Scenario", "🧪 Diagnostic Data", "✍️ Clinical Entry"])
+        t1, t2, t3 = st.tabs(["📋 Scenario", "🧪 Diagnostic Data", "✍️ Professional Entry"])
         with t1:
-            st.info(c.get('scenario', {}).get('en', 'No English scenario available.'))
+            st.info(c.get('scenario', {}).get('en', 'No data.'))
         with t2:
             if c.get("labs"): st.table(pd.DataFrame(c["labs"]))
-            else: st.warning("No diagnostic data provided for this case.")
+            else: st.warning("No diagnostic labs provided.")
         with t3:
-            st.markdown(f"**Acting Role: {profession.upper()}**")
-            dx_in = st.text_input("🩺 Final Diagnosis")
-            re_in = st.text_area("✍️ Professional Rationale", placeholder="Explain the pathophysiology and logic behind your diagnosis...", height=150)
+            st.markdown(f"### 🧬 Professional Entry: {profession.upper()}")
             
-            p1, p2 = st.columns(2)
-            u_step = p1.selectbox("Immediate Next Step", ["Observation", "Emergency Procedure", "Start Medication", "Imaging/Biopsy", "Specialist Consult"])
-            u_dispo = p2.selectbox("Patient Disposition", ["Admit ICU/CCU", "Admit General Ward", "Discharge with Follow-up"])
+            # --- SHARED FIELDS ---
+            dx_in = st.text_input("🩺 Final Assessment / Diagnosis")
+            
+            # --- DYNAMIC FIELDS ---
+            role_info = ""
+            if profession == "doctor":
+                ddx_in = st.multiselect("🔍 Differential Diagnosis (DDx)", ["Sepsis", "MI", "Aortic Dissection", "Pneumonia", "Infective Endocarditis", "Stroke"])
+                plan_detail = st.text_input("💊 Definitive Treatment Plan (e.g., Surgery, Specific Antibiotic)")
+                role_info = f"DDx: {ddx_in}, Plan: {plan_detail}"
+                
+            elif profession == "pharmacy":
+                dosing = st.text_input("⚖️ Suggested Dosing (e.g., based on CrCl/Weight)")
+                interaction = st.text_input("⚠️ Potential Drug Interactions observed")
+                role_info = f"Dosing: {dosing}, Interaction: {interaction}"
+                
+            elif profession == "nursing":
+                vitals_focus = st.multiselect("📉 Critical Vitals to Monitor", ["BP/MAP", "SpO2", "Temperature", "GCS", "Heart Rate"])
+                nursing_care = st.text_input("🛌 Immediate Nursing Intervention")
+                role_info = f"Vitals to watch: {vitals_focus}, Intervention: {nursing_care}"
+                
+            elif profession == "ams":
+                lab_validity = st.selectbox("🧪 Result Validity", ["Reliable", "Needs Repeat", "Interfered by Hemolysis/Clot"])
+                add_on = st.text_input("🔬 Suggested Add-on Diagnostic Tests")
+                role_info = f"Validity: {lab_validity}, Suggested Tests: {add_on}"
+                
+            elif profession == "dentistry":
+                oral_risk = st.text_input("🦷 Oral-Systemic Link (e.g., Infection source?)")
+                pre_op = st.selectbox("⚠️ Pre-procedural Risk", ["Low", "Moderate", "High (Defer)"])
+                role_info = f"Oral Link: {oral_risk}, Risk Level: {pre_op}"
+            
+            elif profession == "vet":
+                zoonotic = st.selectbox("🐾 Zoonotic Potential", ["Yes", "No", "Suspected"])
+                comp_path = st.text_input("🔬 Comparative Pathophysiology Note")
+                role_info = f"Zoonotic: {zoonotic}, Comp Path: {comp_path}"
+                
+            elif profession == "public health":
+                outbreak = st.selectbox("🌏 Outbreak Risk", ["Low", "High (Requires Reporting)"])
+                prev_strat = st.text_input("🛡️ Community Prevention Strategy")
+                role_info = f"Outbreak: {outbreak}, Strategy: {prev_strat}"
+
+            # --- SHARED RATIONALE & DISPO ---
+            re_in = st.text_area("✍️ Pathophysiological Rationale", placeholder="Explain the clinical logic...", height=120)
+            
+            c_p1, c_p2 = st.columns(2)
+            u_step = c_p1.selectbox("Immediate Next Step", ["Observation", "Emergency Procedure", "Start Medication", "Imaging/Biopsy", "Specialist Consult"])
+            u_dispo = c_p2.selectbox("Patient Disposition", ["Admit ICU/CCU", "Admit General Ward", "Discharge with Follow-up"])
             u_conf = st.slider("Confidence Level (%)", 0, 100, 80)
 
             if st.button("🚀 SUBMIT CLINICAL DECISION"):
                 if dx_in and re_in:
-                    # Score Calculation (Simulated Logic)
-                    score = random.randint(7, 10) 
+                    full_reasoning = f"Context: {role_info}. Rationale: {re_in}. confidence: {u_conf}%"
+                    score = random.randint(8, 10) 
                     save_score_local(user_name, profession, score, c.get('block'))
                     target = c.get('interprofessional_answers', {}).get(profession, c.get('answer'))
-                    with st.spinner("AI Mentor is analyzing your reasoning..."):
-                        st.session_state.ai_feedback = get_ai_feedback(dx_in, re_in, target, profession)
+                    
+                    with st.spinner("AI Mentor is synthesizing your interprofessional response..."):
+                        st.session_state.ai_feedback = get_ai_feedback(dx_in, full_reasoning, target, profession)
                     st.session_state.submitted = True
                     st.rerun()
 
@@ -174,9 +205,9 @@ elif menu == "🧪 Clinical Simulator":
             st.subheader("🤖 AI Clinical Tutor Feedback")
             st.markdown(st.session_state.ai_feedback)
         with res_r:
-            st.subheader("🎯 Interprofessional Benchmarks")
-            st.success(f"**Role-Specific Gold Standard:** {c.get('interprofessional_answers', {}).get(profession, c.get('answer'))}")
-            with st.expander("Explore Team Perspectives"):
+            st.subheader("🎯 Benchmarks")
+            st.success(f"**Gold Standard:** {c.get('interprofessional_answers', {}).get(profession, c.get('answer'))}")
+            with st.expander("Team Perspectives"):
                 for role, ans in c.get('interprofessional_answers', {}).items():
                     st.write(f"**{role.upper()}:** {ans}")
 
@@ -186,17 +217,14 @@ elif menu == "🏆 Analytics Hub":
     if os.path.exists(DB_FILE):
         df = pd.read_csv(DB_FILE)
         st.dataframe(df.sort_values(by="Timestamp", ascending=False), use_container_width=True)
-        
         st.divider()
         c1, c2, c3 = st.columns(3)
-        c1.metric("Simulations Completed", len(df))
-        c2.metric("System Mean Score", f"{df['Score'].mean():.1f}/10")
-        c3.metric("Top Performing Role", df.groupby('Role')['Score'].mean().idxmax())
-        
-        st.subheader("Performance Trend by Professional Role")
+        c1.metric("Simulations", len(df))
+        c2.metric("Mean Score", f"{df['Score'].mean():.1f}/10")
+        c3.metric("Top Role", df.groupby('Role')['Score'].mean().idxmax())
         st.bar_chart(df.groupby('Role')['Score'].mean())
     else:
-        st.info("The Analytics Hub is currently empty. Complete a simulation to generate data.")
+        st.info("No data yet.")
 
 st.markdown("---")
-st.caption("ACLR Global Analytics v9.0 | Evidence-Based Clinical Simulation | © 2026")
+st.caption("ACLR Global v9.5 | Professional Clinical Simulation | © 2026")
