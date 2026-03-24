@@ -87,7 +87,7 @@ with st.sidebar:
     page = st.radio("Go to Page", ["📖 User Guide & Scoring", "🧪 Clinical Simulator", "🏆 Leaderboard"])
     
     st.divider()
-    user = st.text_input("👤 User ID / Name", value="Doctor_X")
+    user = st.text_input("👤 User ID / Name", value="Doctor")
     if not user: st.stop()
     
     profession = st.selectbox("👩‍⚕️ Your Role", ["medicine", "dentistry", "nursing","pharmacy","ams","public health", "veterinarian"])
