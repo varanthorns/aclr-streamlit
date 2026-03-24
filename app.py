@@ -53,7 +53,6 @@ if "ai_feedback" not in st.session_state: st.session_state.ai_feedback = ""
 
 # ===================== 5. SIDEBAR & FILTERS =====================
 with st.sidebar:
-    st.image("https://cdn-icons-png.flaticon.com/512/2413/2413004.png", width=70) 
     st.title("ACLR Platform v9.9")
     menu = st.radio("Main Menu", ["📖 Manual & Standards", "🧪 Clinical Simulator", "🏆 Analytics Hub"])
     st.divider()
