@@ -22,35 +22,41 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# ===================== 2. API & DATABASE SETUP =====================
-GEMINI_API_KEY = "AIzaSyDVy5Bh-RmscVwgzUIuYSK8CHa5ZAKnx_g"
-genai.configure(api_key=GEMINI_API_KEY)
-
-DB_FILE = "leaderboard.csv"
-
-def save_score_local(name, role, score, block):
-    new_data = {"Timestamp": time.strftime("%Y-%m-%d %H:%M:%S"), "Name": name, "Role": role.upper(), "Score": score, "Block": block}
-    df = pd.DataFrame([new_data])
-    if not os.path.isfile(DB_FILE): df.to_csv(DB_FILE, index=False)
-    else: df.to_csv(DB_FILE, mode='a', index=False, header=False)
-
+# ===================== 2. API & DATABASE SETUP (UPDATED) =====================
 def get_ai_feedback_v9_5(user_dx, user_re, user_map, target, role, time_taken):
     model = genai.GenerativeModel('gemini-1.5-flash')
-    # เพิ่มการประเมิน Reasoning Map และ Time Efficiency
-    prompt = f"""
-    Act as a Senior Clinical Professor. Evaluate this {role}'s performance.
-    Dx: {user_dx} | Rationale: {user_re} | Gold Standard: {target}
-    Clinical Reasoning Map (Pos/Neg): {user_map}
-    Time Taken: {time_taken} seconds (Criticality factor).
     
-    Provide 3 concise bullets:
-    1. Accuracy & Logic (Scale 1-10)
-    2. Efficiency & Cognitive Mapping: Evaluate if the student caught key findings vs noise.
-    3. Professional Pearl: High-level clinical wisdom.
+    # Prompt ตัวนี้จะวิเคราะห์ 'กระบวนการคิด' (Reasoning Process) ตามที่คุณต้องการ
+    prompt = f"""
+    Act as a Senior Clinical Professor. Evaluate this {role}'s clinical reasoning process.
+    
+    [User Data]
+    - Diagnosis: {user_dx}
+    - Reasoning & SBAR: {user_re}
+    - Clinical Reasoning Map: {user_map}
+    - Gold Standard Reference: {target}
+    - Time Taken: {time_taken} seconds (Criticality factor).
+    
+    [Evaluation Tasks]
+    1. Clinical Logic Alignment: Did the student link the 'Pertinent Positives' correctly to the Diagnosis?
+    2. SBAR Quality: Is the handover professional, concise, and safe? 
+    3. Cognitive Noise Filter: Did they focus on key findings vs clinical noise?
+    4. Time-Criticality: Based on {time_taken}s, was their decision-making efficient for this severity level?
+
+    [Response Format]
+    - **Score (0-10):** [Provide a realistic score]
+    - **Strengths:** [One brief bullet on what they did well]
+    - **Critical Gaps:** [Identify if they missed a 'Red Flag' or if SBAR/Map was weak]
+    - **Professional Pearl:** [One sentence of high-level clinical wisdom for a {role}]
+    
     English only.
     """
-    try: return model.generate_content(prompt).text
-    except: return "AI Mentor is offline. Review Gold Standard Answer."
+    
+    try:
+        response = model.generate_content(prompt)
+        return response.text
+    except Exception as e:
+        return f"AI Mentor is currently offline (Error: {str(e)}). Please review the Gold Standard Answer."
 
 # ===================== 3. DATA LOADING =====================
 @st.cache_data
@@ -248,11 +254,29 @@ elif menu == "🧪 Clinical Simulator":
             neg_find = cm_col2.text_area("Pertinent Negatives (-)", placeholder="List absent findings that rule out DDx", height=150)
             reasoning_map_data = f"Pos: {pos_find} | Neg: {neg_find}"
 
-        with t3:
+      with t3:
             st.markdown(f"### 🧬 Professional Entry: {profession.upper()}")
-            dx_in = st.text_input("🩺 Final Assessment / Diagnosis")
             
-            # --- DYNAMIC FIELDS (RETAINED) ---
+            # --- PHASE 1: CLINICAL MAPPING (Data Synthesis) ---
+            st.markdown("#### 🧠 Step 1: Reasoning Map")
+            c1, c2 = st.columns(2)
+            pos_f = c1.text_area("Pertinent Positives (+)", placeholder="List symptoms/labs supporting Dx...", key="pos_map")
+            neg_f = c2.text_area("Pertinent Negatives (-)", placeholder="List absent findings to rule out DDx...", key="neg_map")
+            
+            # --- PHASE 2: SBAR HANDOVER ---
+            st.divider()
+            st.markdown("#### 🗣️ Step 2: SBAR Handover")
+            h_s = st.text_input("Situation", placeholder="What is happening right now?", key="sbar_s")
+            h_b = st.text_input("Background", placeholder="Clinical context/history?", key="sbar_b")
+            h_a = st.text_area("Assessment", placeholder="Your analysis of the situation?", key="sbar_a")
+            h_r = st.text_area("Recommendation", placeholder="Proposed immediate plan?", key="sbar_r")
+
+            # --- PHASE 3: FINAL ASSESSMENT ---
+            st.divider()
+            st.markdown("#### 🩺 Step 3: Final Decision")
+            dx_in = st.text_input("Final Assessment / Diagnosis", key="final_dx")
+            
+            # --- DYNAMIC FIELDS PER ROLE ---
             role_info = ""
             if profession == "doctor":
                 ddx = st.multiselect("🔍 DDx", ["Sepsis", "MI", "Stroke", "IE", "Pneumonia", "Heart Failure"])
@@ -266,15 +290,46 @@ elif menu == "🧪 Clinical Simulator":
                 vitals = st.multiselect("📉 Watch Vitals", ["BP", "SpO2", "Temp", "GCS"])
                 n_care = st.text_input("🛌 Nursing Intervention")
                 role_info = f"Vitals: {vitals}, Care: {n_care}"
-            # ... (Other roles remain same)
+            # (เพิ่มอาชีพอื่นๆ ได้ตามความต้องการของคุณ)
 
-            re_in = st.text_area("✍️ Pathophysiological Rationale", height=120)
+            re_in = st.text_area("✍️ Pathophysiological Rationale", height=120, key="patho_re")
+            
             c_p1, c_p2 = st.columns(2)
             u_step = c_p1.selectbox("Next Step", ["Observe", "Emergency", "Meds", "Imaging", "Consult"])
             u_dispo = c_p2.selectbox("Disposition", ["ICU/CCU", "General Ward", "Discharge"])
-            
-            # 💰 FEATURE 3: COST-EFFECTIVE SCORE (Implicit slider)
-            u_conf = st.slider("Confidence (%) | Higher confidence in high-cost tests required", 0, 100, 80)
+            u_conf = st.slider("Confidence (%)", 0, 100, 80)
+
+            # --- SUBMIT LOGIC ---
+            if st.button("🚀 SUBMIT CLINICAL DECISION"):
+                if dx_in and re_in:
+                    # รวมข้อมูล "กระบวนการคิด" ทั้งหมดส่งให้ AI
+                    advanced_reasoning = f"""
+                    [Reasoning Map] Positives: {pos_f} | Negatives: {neg_f}
+                    [SBAR Handover] S: {h_s}, B: {h_b}, A: {h_a}, R: {h_r}
+                    [Role-Specific] {role_info}
+                    [Pathophysiology] {re_in}
+                    [Confidence] {u_conf}% | [Next Step] {u_step} | [Dispo] {u_dispo}
+                    """
+                    
+                    # บันทึกคะแนนลง CSV (สุ่มคะแนนพื้นฐานก่อน AI ตรวจจริง)
+                    save_score_local(user_name, profession, random.randint(7, 10), c.get('block'))
+                    
+                    # คำตอบเป้าหมายตามสายวิชาชีพ
+                    target = c.get('interprofessional_answers', {}).get(profession, c.get('answer'))
+                    
+                    with st.spinner("AI Mentor Analyzing Process..."):
+                        # ส่ง Data ชุดใหญ่เข้าฟังก์ชัน AI
+                        st.session_state.ai_feedback = get_ai_feedback_v9_5(
+                            dx_in, 
+                            advanced_reasoning, 
+                            f"Pos: {pos_f} | Neg: {neg_f}", 
+                            target, 
+                            profession, 
+                            elapsed
+                        )
+                    
+                    st.session_state.submitted = True
+                    st.rerun()
 
             if st.button("🚀 SUBMIT CLINICAL DECISION"):
                 if dx_in and re_in:
