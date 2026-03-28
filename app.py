@@ -2,7 +2,24 @@ import streamlit as st
 import json, random, pandas as pd, os, time
 import google.generativeai as genai
 
-# ===================== 1. CONFIG & MEDICAL UI =====================
+# ===================== 1. GLOBAL CONFIG & CONSTANTS =====================
+# วางไว้ตรงนี้เพื่อให้ทุกส่วนของ Code มองเห็นตัวแปรเหมือนกัน
+DB_FILE = "leaderboard.csv"
+GEMINI_API_KEY = "AIzaSyDVy5Bh-RmscVwgzUIuYSK8CHa5ZAKnx_g"
+genai.configure(api_key=GEMINI_API_KEY)
+
+st.set_page_config(layout="wide", page_title="ACLR Clinical Analytics Platform", page_icon="🩺")
+
+# Medical-Grade CSS
+st.markdown("""
+    <style>
+    .main { background-color: #f8f9fa; }
+    .stButton>button { width: 100%; border-radius: 8px; height: 3.5em; background-color: #1976D2 !important; color: white !important; font-weight: bold; border: none; }
+    .stMetric { background-color: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-left: 5px solid #1976D2; }
+    .stress-timer { font-size: 28px; font-weight: bold; color: #d32f2f; text-align: center; border: 3px solid #d32f2f; padding: 10px; border-radius: 15px; background: white; }
+    </style>
+    """, unsafe_allow_html=True)
+# ===================== 2. CONFIG & MEDICAL UI =====================
 st.set_page_config(layout="wide", page_title="ACLR Clinical Analytics Platform", page_icon="🩺")
 
 # Medical-Grade CSS + New Stress Factor Styles
@@ -22,7 +39,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# ===================== 2. API & DATABASE SETUP (UPDATED) =====================
+# ===================== 3. API & DATABASE SETUP (UPDATED) =====================
 def get_ai_feedback_v9_5(user_dx, user_re, user_map, target, role, time_taken):
     model = genai.GenerativeModel('gemini-1.5-flash')
     
@@ -58,7 +75,7 @@ def get_ai_feedback_v9_5(user_dx, user_re, user_map, target, role, time_taken):
     except Exception as e:
         return f"AI Mentor is currently offline (Error: {str(e)}). Please review the Gold Standard Answer."
 
-# ===================== 3. DATA LOADING =====================
+# ===================== 4. DATA LOADING =====================
 @st.cache_data
 def load_cases():
     if os.path.exists("cases.json"):
@@ -81,14 +98,14 @@ def load_cases():
 
 all_cases = load_cases()
 
-# ===================== 4. SESSION STATE =====================
+# ===================== 5. SESSION STATE =====================
 if "case" not in st.session_state: st.session_state.case = all_cases[0]
 if "submitted" not in st.session_state: st.session_state.submitted = False
 if "ai_feedback" not in st.session_state: st.session_state.ai_feedback = ""
 if "start_time" not in st.session_state: st.session_state.start_time = time.time()
 if "evolved" not in st.session_state: st.session_state.evolved = False
 
-# ===================== 5. SIDEBAR & FILTERS =====================
+# ===================== 6. SIDEBAR & FILTERS =====================
 with st.sidebar:
     st.title("ACLR Platform")
     menu = st.radio("Main Menu", ["📖 Manual & Standards", "🧪 Clinical Simulator", "🏆 Analytics Hub"])
@@ -114,7 +131,7 @@ with st.sidebar:
             st.session_state.evolved = False
             st.rerun()
 
-# ===================== 6. PAGES =====================
+# ===================== 7. PAGES =====================
 # --- 📖 MANUAL & STANDARDS (UPGRADED ENGLISH EDITION) ---
 if menu == "📖 Manual & Standards":
     st.header("📖 Clinical Operations & User Guide")
