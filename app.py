@@ -12,30 +12,30 @@ except:
 
 genai.configure(api_key=GEMINI_API_KEY)
 
-# ✅ FIX: function ที่หาย
+# ✅ FIX: function บันทึกคะแนน (Cleaned from U+00A0)
 def save_score_local(user, role, score, block, competency=None, time_taken=0):
-    new_entry = {
-        "User": user,
-        "Role": role,
-        "Score": score,
-        "Block": block,
-        "Time": time_taken,
-        "Timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
-    }
+    new_entry = {
+        "User": user,
+        "Role": role,
+        "Score": score,
+        "Block": block,
+        "Time": time_taken,
+        "Timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
+    }
 
-    # เพิ่ม competency tracking
-    if competency:
-        new_entry.update(competency)
+    # เพิ่ม competency tracking
+    if competency:
+        new_entry.update(competency)
 
-    df_new = pd.DataFrame([new_entry])
+    df_new = pd.DataFrame([new_entry])
 
-    if os.path.exists(DB_FILE):
-        df_old = pd.read_csv(DB_FILE)
-        df = pd.concat([df_old, df_new], ignore_index=True)
-    else:
-        df = df_new
+    if os.path.exists(DB_FILE):
+        df_old = pd.read_csv(DB_FILE)
+        df = pd.concat([df_old, df_new], ignore_index=True)
+    else:
+        df = df_new
 
-    df.to_csv(DB_FILE, index=False)
+    df.to_csv(DB_FILE, index=False)
 
 # ===================== 🧠 ADAPTIVE LEARNING =====================
 
