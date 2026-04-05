@@ -61,7 +61,7 @@ def get_adaptive_difficulty(user):
     else:
         return "hard"
 # ===================== 2. CONFIG & MEDICAL UI =====================
-st.set_page_config(layout="wide", page_title="ACLR Clinical Analytics Platform", page_icon="🩺")
+st.set_page_config(layout="wide", page_title="FTF-CRA Clinical Analytics Platform", page_icon="🩺")
 
 # Medical-Grade CSS + New Stress Factor Styles
 st.markdown("""
@@ -154,7 +154,7 @@ if "evolved" not in st.session_state: st.session_state.evolved = False
 
 # ===================== 6. SIDEBAR & FILTERS =====================
 with st.sidebar:
-    st.title("ACLR Platform")
+    st.title("FTF-CRA Platform")
     menu = st.radio("Main Menu", ["📖 Manual & Standards", "🧪 Clinical Simulator", "🏆 Analytics Hub"])
     st.divider()
     user_name = st.text_input("👤 Practitioner Name", "User_01")
@@ -187,7 +187,7 @@ with st.sidebar:
 # --- 📖 MANUAL & STANDARDS (UPGRADED ENGLISH EDITION) ---
 if menu == "📖 Manual & Standards":
     st.header("📖 Clinical Operations & User Guide")
-    st.markdown("### **ACLR Platform**")
+    st.markdown("### **FTF-CRA Platform**")
     st.write("*Adaptive Cognitive Load–Driven AI Clinical Reasoning Loop*")
     
     # --- SECTION 1: SYSTEM PHILOSOPHY ---
@@ -318,7 +318,7 @@ elif menu == "🧪 Clinical Simulator":
             
             # 🏥 Mock EHR Integration (ย้ายเข้ามาอยู่ใน t1 ให้เรียบร้อย)
             ehr_data = {
-                "Patient ID": "ACLR-001",
+                "Patient ID": "FTF-CRA-001",
                 "Vitals": {"BP": "90/60", "HR": 120, "SpO2": "92%"},
                 "Status": "ER Admission",
                 "Note": "High-risk cardiac event"
@@ -465,7 +465,7 @@ elif menu == "🏆 Analytics Hub":
 # ตรวจสอบว่าไม่มีบรรทัด 'existing_cols = ...' หลุดอยู่นอกแนว (Indentation) ของ elif นะครับ
     
 st.markdown("---")
-st.caption("ACLR Global v9.9.5 | Adaptive Cognitive Load–Driven AI Clinical Reasoning Loop | © 2026")
+st.caption("FTF-CRA Global v9.9.5 | Adaptive Cognitive Load–Driven AI Clinical Reasoning Loop | © 2026")
 # --- 🧪 UPDATE: AI PROMPT ENHANCEMENT ---
 # (หมายเหตุ: ควรไปปรับแก้ฟังก์ชัน get_ai_feedback เดิมให้รับค่าเหล่านี้เข้าไปตรวจด้วย 
 # เพื่อให้ AI ตรวจสอบ 'กระบวนการคิด' ไม่ใช่แค่ 'คำตอบสุดท้าย')
