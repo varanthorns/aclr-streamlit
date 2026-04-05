@@ -295,7 +295,7 @@ elif menu == "🧪 Clinical Simulator":
         st.markdown(f"<div class='stress-timer'>⏳ {remaining}s</div>", unsafe_allow_html=True)
         if remaining == 0: st.error("CRITICAL: Efficiency Score Penalized!")
 
-    col_main, col_info = st.columns([2, 1])
+   col_main, col_info = st.columns([2, 1])
     
    with col_main:
     t1, t2, t3 = st.tabs(["📋 Clinical Case Details", "🧠 Clinical Reasoning Map", "✍️ Professional Entry"])
