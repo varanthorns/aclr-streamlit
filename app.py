@@ -447,11 +447,6 @@ elif menu == "🏆 Analytics Hub":
         st.info("ยังไม่มีข้อมูลการจำลองในขณะนี้ กรุณาทำแบบทดสอบใน Simulator ก่อน")
     comp_cols = ["Diagnosis", "Reasoning", "SBAR", "Safety"]
     
-    existing_cols = [c for c in comp_cols if c in df.columns]
-    
-    if existing_cols:
-        st.bar_chart(df[existing_cols].mean())
-
 st.markdown("---")
 st.caption("ACLR Global v9.9.5 | Adaptive Cognitive Load–Driven AI Clinical Reasoning Loop | © 2026")
 # --- 🚀 EXTRA MODULES: SBAR & REASONING MAP (Add this at the end of Simulator Page) ---
