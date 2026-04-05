@@ -399,8 +399,11 @@ elif menu == "🧪 Clinical Simulator":
                         competency = {
                             "Diagnosis": random.randint(7, 10) if dx_in.lower() in str(target_ans).lower() else random.randint(4, 7),
                             "Reasoning": random.randint(6, 10),
-                            "SBAR": 10 if h_s and h_r else 5,
-                            "Safety": 10 if u_dispo == "ICU/CCU" and "STEMI" in str(target_ans) else 7
+                            sbar_complete = all([h_s, h_b, h_a, h_r])
+                            "SBAR": 10 if sbar_complete else 6
+                            "Safety": 10 if u_dispo == "ICU/CCU" and critical = ["stemi", "sepsis", "stroke"]
+                             is_critical = any(x in str(target_ans).lower() for x in critical)
+                            "Safety": 10 if is_critical and u_dispo == "ICU/CCU" else 7
                         }
                         score = int(sum(competency.values()) / 4)
                         
