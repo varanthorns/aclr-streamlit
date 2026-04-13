@@ -1,43 +1,167 @@
 import streamlit as st
 import json, random, pandas as pd, os, time
 import google.generativeai as genai
-# ===================== ⚙️ GLOBAL CONFIG =====================
-DB_FILE = "clinical_scores.csv"  #
 
-# ===================== 🔧 1. FIX + NEW CORE SYSTEM =====================
+# ===================== ⚙️ GLOBAL CONFIG & API =====================
+DB_FILE = "clinical_scores_v10.csv"
 
-# 🔐 FIX: ใช้ secrets แทน API key hardcode (ปลอดภัย)
 try:
     GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
 except:
-    GEMINI_API_KEY = "DEMO_KEY"
+    GEMINI_API_KEY = "YOUR_API_KEY_HERE" # ใส่ Key จริงหากไม่ได้ใช้ st.secrets
 
 genai.configure(api_key=GEMINI_API_KEY)
 
-# ✅ FIX: function ที่หาย
-def save_score_local(user, role, score, block, competency=None, time_taken=0):
-    new_entry = {
-        "User": user,
-        "Role": role,
-        "Score": score,
-        "Block": block,
-        "Time": time_taken,
-        "Timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
-    }
+# ===================== 🧠 AI MENTOR FUNCTION (FTF-CRA CORE) =====================
+def get_ai_feedback_v9_5(dx_ft, dx_final, conf_ft, conf_final, user_re, user_map, target, role, time_taken):
+    model = genai.GenerativeModel('gemini-1.5-flash')
+    
+    prompt = f"""
+    Act as a Senior Clinical Professor. Evaluate the Clinical Reasoning process of a {role}.
+    
+    [User Journey]
+    - First Thought: {dx_ft} (Confidence: {conf_ft}%)
+    - Final Thought: {dx_final} (Confidence: {conf_final}%)
+    - Time Taken: {time_taken} seconds
+    - Reasoning Map: {user_map}
+    - Rationale/SBAR: {user_re}
+    
+    [Gold Standard]
+    - Target Diagnosis: {target}
 
-    # เพิ่ม competency tracking
-    if competency:
-        new_entry.update(competency)
+    [Tasks]
+    1. Analyze 'Diagnostic Shift': Did they change their mind correctly based on labs?
+    2. Detect Bias: Check for Anchoring Bias or Premature Closure.
+    3. Calibration: Is their confidence level appropriate for their accuracy?
+    4. Provide 1 Metacognitive Question and 1 Professional Pearl.
 
-    df_new = pd.DataFrame([new_entry])
+    Format: Use Markdown. Concise and professional.
+    """
+    try:
+        response = model.generate_content(prompt)
+        return response.text
+    except Exception as e:
+        return f"AI Mentor Offline. Gold Standard: {target}"
 
+# ===================== 🔧 DATA PERSISTENCE =====================
+def save_score_local(data):
+    df_new = pd.DataFrame([data])
     if os.path.exists(DB_FILE):
         df_old = pd.read_csv(DB_FILE)
         df = pd.concat([df_old, df_new], ignore_index=True)
     else:
         df = df_new
-
     df.to_csv(DB_FILE, index=False)
+
+# ===================== 📂 MOCK DATA =====================
+all_cases = [{
+    "block":"Cardiology", 
+    "difficulty":"hard", 
+    "scenario":{"en":"A 65-year-old male presents with 2 hours of crushing chest pain and diaphoresis."}, 
+    "labs":[{"Test": "Troponin T", "Result": "480", "Unit": "ng/L", "Ref": "<14"}],
+    "answer":"Acute STEMI",
+    "interprofessional_answers": {"doctor": "PCI within 90 mins", "nursing": "Vitals & Oxygen"}
+}]
+
+# ===================== 🔄 SESSION STATE MANAGEMENT =====================
+if "phase" not in st.session_state: st.session_state.phase = "FT"
+if "submitted" not in st.session_state: st.session_state.submitted = False
+if "case" not in st.session_state: st.session_state.case = all_cases[0]
+if "start_time" not in st.session_state: st.session_state.start_time = time.time()
+
+# ===================== 🎨 UI LAYOUT =====================
+st.set_page_config(layout="wide", page_title="FTF-CRA Platform")
+
+with st.sidebar:
+    st.title("🩺 FTF-CRA Simulator")
+    user_name = st.text_input("Practitioner", "User_01")
+    profession = st.selectbox("Role", ["Doctor", "Pharmacy", "Nursing", "AMS"])
+    if st.button("🔄 New Case"):
+        st.session_state.phase = "FT"
+        st.session_state.submitted = False
+        st.session_state.start_time = time.time()
+        st.rerun()
+
+# ===================== 🧪 MAIN SIMULATOR LOGIC =====================
+c = st.session_state.case
+elapsed = int(time.time() - st.session_state.start_time)
+
+if not st.session_state.submitted:
+    # --- PHASE 1: FIRST THOUGHT (System 1) ---
+    if st.session_state.phase == "FT":
+        st.header("⚡ Phase 1: First Thought")
+        st.info(f"**Scenario:** {c['scenario']['en']}")
+        
+        dx_ft = st.text_input("วินิจฉัยเบื้องต้น (First Thought)")
+        conf_ft = st.slider("ความมั่นใจแรก (%)", 0, 100, 50)
+        
+        if st.button("บันทึกและดูผลตรวจ (Unlock Labs) ➡️"):
+            if dx_ft:
+                st.session_state.dx_ft = dx_ft
+                st.session_state.conf_ft = conf_ft
+                st.session_state.phase = "FINAL"
+                st.rerun()
+            else: st.error("กรุณาระบุวินิจฉัย")
+
+    # --- PHASE 2: FINAL THOUGHT (System 2) ---
+    elif st.session_state.phase == "FINAL":
+        st.header("🧐 Phase 2: Final Thought & Analysis")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.subheader("📋 Clinical Labs")
+            st.table(pd.DataFrame(c["labs"]))
+            
+        with col2:
+            st.subheader("🧠 Reasoning Map")
+            pos_f = st.text_area("Pertinent Positives (+)", key="pos_f")
+            neg_f = st.text_area("Clinical Noise / Negatives (-)", key="neg_f")
+
+        st.divider()
+        dx_final = st.text_input("วินิจฉัยสุดท้าย (Final Thought)", value=st.session_state.dx_ft)
+        conf_final = st.slider("ความมั่นใจสุดท้าย (%)", 0, 100, st.session_state.conf_ft)
+        rationale = st.text_area("เหตุผลเชิงพยาธิสรีรวิทยา (Rationale/SBAR)")
+
+        if st.button("🚀 ส่งผลประเมินให้ AI Mentor"):
+            with st.spinner("AI กำลังวิเคราะห์กระบวนการคิด..."):
+                # 1. รวบรวมข้อมูล
+                user_map = f"Positives: {pos_f} | Noise: {neg_f}"
+                
+                # 2. เรียก AI Mentor
+                ai_feedback = get_ai_feedback_v9_5(
+                    st.session_state.dx_ft, dx_final,
+                    st.session_state.conf_ft, conf_final,
+                    rationale, user_map, c['answer'], profession, elapsed
+                )
+                
+                # 3. บันทึกผล
+                payload = {
+                    "User": user_name, "Role": profession, "Time": elapsed,
+                    "Dx_FT": st.session_state.dx_ft, "Dx_Final": dx_final,
+                    "Score": 10 if dx_final.lower() in c['answer'].lower() else 5,
+                    "Timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
+                }
+                save_score_local(payload)
+                
+                # 4. อัปเดต UI
+                st.session_state.ai_feedback = ai_feedback
+                st.session_state.submitted = True
+                st.rerun()
+
+# --- PHASE 3: DEBRIEFING ---
+else:
+    st.header("👨‍🏫 AI Mentor Debriefing")
+    st.markdown(st.session_state.ai_feedback)
+    
+    with st.expander("🔑 ดูคำเฉลย (Gold Standard)"):
+        st.success(f"**เฉลย:** {c['answer']}")
+        st.write(f"**มุมมองผู้เชี่ยวชาญ:** {c['interprofessional_answers'].get(profession.lower(), 'N/A')}")
+
+    if st.button("🏁 เริ่มเคสใหม่"):
+        st.session_state.submitted = False
+        st.session_state.phase = "FT"
+        st.session_state.start_time = time.time()
+        st.rerun()
 
 # ===================== 🧠 ADAPTIVE LEARNING =====================
 
@@ -81,46 +205,48 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # ===================== 3. API & DATABASE SETUP (UPDATED) =====================
-def get_ai_feedback_v9_5(user_dx, user_re, user_map, target, role, time_taken):
+def get_ai_feedback_v9_5(dx_ft, dx_final, conf_ft, conf_final, user_re, user_map, target, role, time_taken):
     model = genai.GenerativeModel('gemini-1.5-flash')
     
-    # Prompt ตัวนี้จะวิเคราะห์ 'กระบวนการคิด' (Reasoning Process) ตามที่คุณต้องการ
+    # Prompt ที่เน้นวิเคราะห์ "ช่องว่างของการตัดสินใจ" (Decision Gap)
     prompt = f"""
-    Act as a Senior Clinical Professor. Evaluate this {role}'s clinical reasoning process.
-    
-    [User Data]
-    - Diagnosis: {user_dx}
-    - Reasoning & SBAR: {user_re}
+    Act as a Senior Clinical Professor and Expert in Medical Education. 
+    Evaluate the Clinical Reasoning process of a {role} based on the FTF-CRA framework.
+
+    [User Diagnostic Journey]
+    - First Thought (Initial Impression): {dx_ft} (Confidence: {conf_ft}%)
+    - Final Thought (After Evidence): {dx_final} (Confidence: {conf_final}%)
+    - Time Taken: {time_taken} seconds
+
+    [Cognitive Evidence]
     - Clinical Reasoning Map: {user_map}
-    - Gold Standard Reference: {target}
-    - Time Taken: {time_taken} seconds (Criticality factor).
+    - Rationale & SBAR: {user_re}
     
+    [Gold Standard]
+    - Target Diagnosis: {target}
+
     [Evaluation Tasks]
-    1. Clinical Logic Alignment: Did the student link the 'Pertinent Positives' correctly to the Diagnosis?
-    2. SBAR Quality: Is the handover professional, concise, and safe? 
-    3. Cognitive Noise Filter: Did they focus on key findings vs clinical noise?
-    4. Time-Criticality: Based on {time_taken}s, was their decision-making efficient for this severity level?
+    1. Analyze 'Diagnostic Shift': Did the learner correctly transition from FT to Final Dx based on evidence? 
+    2. Cognitive Bias Detection: Check for 'Anchoring Bias' (clinging to FT despite labs) or 'Premature Closure'.
+    3. Calibration Check: Compare confidence vs. accuracy. Is there 'Overconfidence' or 'Underconfidence'?
+    4. Data Synthesis: Did they effectively separate 'Pertinent Positives' from 'Clinical Noise'?
+    5. Professional Pearl: Give 1 high-level clinical tip for a {role}.
 
     [Response Format]
-    - Diagnosis Score (0-10)
-    - Reasoning Score (0-10)
-    - SBAR Score (0-10)
-    - Safety Score (0-10)
-    - **Overall Score (0-10):**
-    - **Strengths:**
-    - **Critical Gaps:**
-    - **Cognitive Bias (if any):**
-    - **Professional Pearl:**
-    - **Well-being Tip:**
+    - **Diagnostic Accuracy:** Score/10
+    - **Reasoning Logic:** Score/10
+    - **Cognitive Analysis:** (Briefly explain the thinking gap or bias)
+    - **Metacognitive Question:** (1 question to make the student reflect)
+    - **Professional Pearl:** (Specialist insight)
     
-    English only.
+    Response in English, professional, and encouraging.
     """
     
     try:
         response = model.generate_content(prompt)
         return response.text
     except Exception as e:
-        return f"AI Mentor is currently offline (Error: {str(e)}). Please review the Gold Standard Answer."
+        return f"AI Mentor is unavailable. Target: {target}. (Error: {str(e)})"
 
 # ===================== 4. DATA LOADING =====================
 @st.cache_data
