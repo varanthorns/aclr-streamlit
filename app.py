@@ -304,7 +304,7 @@ if menu == "📖 Manual & Standards":
     st.divider()
     st.caption("Educational Reference Standards: Harrison's Principles of Internal Medicine 21st Ed, AHA/ACC 2024, IDSA, and WHO Clinical Guidelines.")
 
-# --- 🧪 # --- 🧪 CLINICAL SIMULATOR ---
+# --- 🧪 CLINICAL SIMULATOR ---
 elif menu == "🧪 Clinical Simulator":
     c = st.session_state.case
     
@@ -326,7 +326,7 @@ elif menu == "🧪 Clinical Simulator":
     with col_main:
         t1, t2, t3 = st.tabs(["📋 Clinical Case Details", "🧠 Clinical Reasoning Map", "✍️ Professional Entry"])
         
-     with t1:
+        with t1:
             st.subheader("📋 Clinical Case Details")
             
             # 1. แสดงแค่ Scenario (เนื้อเรื่อง)
@@ -347,7 +347,7 @@ elif menu == "🧪 Clinical Simulator":
             
             st.divider()
 
-            # 3. ค่อยแสดงผล Labs และข้อมูลเชิงลึก (เพื่อเข้าสู่ Analysis Phase)
+            # 3. ค่อยแสดงผล Labs และข้อมูลเชิงลึก
             st.subheader("🔬 Diagnostic Data & Labs")
             if c.get("labs"): 
                 st.table(pd.DataFrame(c["labs"]))
@@ -379,6 +379,8 @@ elif menu == "🧪 Clinical Simulator":
         with t3:
             st.markdown(f"### 🧬 Professional Entry: {profession.upper()}")
             dx_in = st.text_input("🩺 Final Assessment / Diagnosis", key="entry_dx")
+            
+            # (ตรงนี้คุณสามารถใส่ Dynamic Professional Fields และปุ่ม Submit ต่อได้เลยครับ)
             
             # ===================== ✍️ DYNAMIC PROFESSIONAL FIELDS =====================
             role_info = ""
