@@ -413,7 +413,7 @@ elif menu == "🧪 Clinical Simulator":
                                 user_map=user_map,
                                 target=c.get('answer'),
                                 role=profession,
-                                time_taken=elapsed
+                                time_taken=elapsed,
                                 confidence=u_conf, # ค่าจาก slider
                                 stress=stress_level # ค่าจาก slider
                             )
