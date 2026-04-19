@@ -336,15 +336,16 @@ if menu == "📖 Manual & Standards":
     st.divider()
     st.caption("Educational Reference Standards: Harrison's Principles of Internal Medicine 21st Ed, AHA/ACC 2024, IDSA, and WHO Clinical Guidelines.")
 
-# --- 🧪 # --- 🧪 CLINICAL SIMULATOR ---
+# --- 🧪 CLINICAL SIMULATOR ---
 elif menu == "🧪 Clinical Simulator":
     c = st.session_state.case
     
-    # ⏱️ FEATURE 1: TIME-PRESSURE
+    # ⏱️ FEATURE 1: TIME-PRESSURE LOGIC
     elapsed = int(time.time() - st.session_state.start_time)
-    time_limit = 600 
+    time_limit = 600  # 10 minutes
     remaining = max(0, time_limit - elapsed)
     
+    # Header Section
     col_h1, col_h2 = st.columns([3, 1])
     with col_h1: 
         st.title(f"🏥 Simulation: {c.get('block')} | Level: {c.get('difficulty').upper()}")
@@ -361,7 +362,9 @@ elif menu == "🧪 Clinical Simulator":
         with t1:
             st.subheader("Patient Scenario & Diagnostic Data")
             st.info(c.get('scenario', {}).get('en', 'No data.'))
+            
             if c.get("labs"): 
+                st.markdown("**🔬 Laboratory Findings:**")
                 st.table(pd.DataFrame(c["labs"]))
             
             if st.button("⏩ Advance 24 Hours (Evaluate Evolution)"):
@@ -370,13 +373,14 @@ elif menu == "🧪 Clinical Simulator":
             if st.session_state.evolved:
                 st.warning(f"**Evolution:** {c.get('evolution', 'Condition remains stable but requires monitoring.')}")
             
-            # 🏥 Mock EHR Integration (ย้ายเข้ามาอยู่ใน t1 ให้เรียบร้อย)
+            # 📂 EHR Integration Snapshot
             ehr_data = {
                 "Patient ID": "FTF-CRA-001",
                 "Vitals": {"BP": "90/60", "HR": 120, "SpO2": "92%"},
                 "Status": "ER Admission",
                 "Note": "High-risk cardiac event"
             }
+            st.divider()
             st.subheader("📂 EHR Snapshot")
             st.json(ehr_data)
         
@@ -384,103 +388,122 @@ elif menu == "🧪 Clinical Simulator":
             st.subheader("Reasoning Map: Data Synthesis")
             st.write("Differentiate Pertinent findings from Clinical Noise.")
             cm_col1, cm_col2 = st.columns(2)
-            pos_f = cm_col1.text_area("Pertinent Positives (+)", placeholder="Supporting findings...", height=150, key="map_pos")
-            neg_f = cm_col2.text_area("Pertinent Negatives (-)", placeholder="Absent findings...", height=150, key="map_neg")
+            # ใช้ st.session_state มาคุมค่า เพื่อให้ค่าไม่หายเวลาสลับ Tab
+            pos_f = cm_col1.text_area("Pertinent Positives (+)", placeholder="Supporting findings...", height=200, key="map_pos")
+            neg_f = cm_col2.text_area("Pertinent Negatives (-)", placeholder="Absent findings...", height=200, key="map_neg")
 
         with t3:
             st.markdown(f"### 🧬 Professional Entry: {profession.upper()}")
-            dx_in = st.text_input("🩺 Final Assessment / Diagnosis", key="entry_dx")
+            dx_in = st.text_input("🩺 Final Assessment / Diagnosis", key="entry_dx", placeholder="Enter definitive diagnosis...")
             
-            # --- DYNAMIC FIELDS ---
+            # --- DYNAMIC FIELDS BASED ON ROLE ---
             role_info = ""
             if profession == "doctor":
-                # เพิ่ม key="doctor_ddx" เพื่อป้องกัน ID ซ้ำ
-                ddx = st.multiselect("🔍 DDx", ["Sepsis", "MI", "Stroke", "IE", "Pneumonia", "Heart Failure"], key="doctor_ddx")
-                plan = st.text_input("💊 Treatment Plan", key="doctor_plan")
+                ddx = st.multiselect("🔍 Differential Diagnosis (DDx)", ["Sepsis", "MI", "Stroke", "IE", "Pneumonia", "Heart Failure"], key="doctor_ddx")
+                plan = st.text_input("💊 Immediate Treatment Plan", key="doctor_plan")
                 role_info = f"DDx: {ddx}, Plan: {plan}"
             elif profession == "pharmacy":
-                dosing = st.text_input("⚖️ Dosing Logic")
-                interaction = st.text_input("⚠️ Interactions")
+                dosing = st.text_input("⚖️ Dosing Logic & Calculation", key="ph_dose")
+                interaction = st.text_input("⚠️ Critical Drug Interactions", key="ph_inter")
                 role_info = f"Dosing: {dosing}, Interaction: {interaction}"
             elif profession == "nursing":
-                vitals = st.multiselect("📉 Watch Vitals", ["BP", "SpO2", "Temp", "GCS"])
-                n_care = st.text_input("🛌 Nursing Intervention")
-                role_info = f"Vitals: {vitals}, Care: {n_care}"
-            # ... (Other roles)
-
-            re_in = st.text_area("✍️ Pathophysiological Rationale", height=120, key="entry_re")
+                vitals_mon = st.multiselect("📉 Priority Vitals to Monitor", ["BP", "SpO2", "Temp", "GCS", "Urine Output"], key="nu_vit")
+                n_care = st.text_input("🛌 Immediate Nursing Intervention", key="nu_care")
+                role_info = f"Vitals: {vitals_mon}, Care: {n_care}"
             
-            # --- SBAR HANDOVER (Moved inside Tab 3 for better flow) ---
+            re_in = st.text_area("✍️ Pathophysiological Rationale (System 2)", height=150, key="entry_re", placeholder="Explain the underlying mechanism...")
+            
+            # --- SBAR HANDOVER ---
             st.divider()
-            st.markdown("#### 🗣️ SBAR Handover (Bonus Points)")
-            h_s = st.text_input("Situation", placeholder="What is happening now?", key="sbar_s")
-            h_b = st.text_input("Background", placeholder="History/Context?", key="sbar_b")
-            h_a = st.text_area("Assessment", placeholder="Your analysis?", key="sbar_a")
-            h_r = st.text_area("Recommendation", placeholder="Immediate plan?", key="sbar_r")
+            st.markdown("#### 🗣️ SBAR Handover")
+            s_col1, s_col2 = st.columns(2)
+            h_s = s_col1.text_input("Situation", key="sbar_s")
+            h_b = s_col2.text_input("Background", key="sbar_b")
+            h_a = s_col1.text_area("Assessment", key="sbar_a", height=100)
+            h_r = s_col2.text_area("Recommendation", key="sbar_r", height=100)
 
+            st.divider()
             c_p1, c_p2 = st.columns(2)
-            u_step = c_p1.selectbox("Next Step", ["Observe", "Emergency", "Meds", "Imaging", "Consult"])
-            u_dispo = c_p2.selectbox("Disposition", ["ICU/CCU", "General Ward", "Discharge"])
-            u_conf = st.slider("Confidence (%)", 0, 100, 80)
-            st.divider()
-            st.markdown("### 🧘 Reflection & Well-being")
+            u_step = c_p1.selectbox("Next Step", ["Observe", "Emergency Intervention", "Medication Loading", "Urgent Imaging", "Consult Specialist"])
+            u_dispo = c_p2.selectbox("Disposition", ["ICU/CCU", "General Ward", "Discharge / Home"])
+            u_conf = st.slider("Diagnostic Confidence (%)", 0, 100, 80)
             
-            reflection = st.text_area("What would you do differently next time?")
-            
-            stress_level = st.slider("😓 Stress Level", 0, 10, 5)
-            
+            st.markdown("### 🧘 Reflection & Stress")
+            stress_level = st.slider("😓 Current Perceived Stress Level", 0, 10, 5)
             if stress_level > 8:
-                st.warning("⚠️ High stress detected. Consider taking a short break.")
+                st.warning("⚠️ High stress detected. Take a deep breath before final submission.")
+
             # --- SUBMIT LOGIC ---
             if st.button("🚀 SUBMIT CLINICAL DECISION"):
                 if dx_in and re_in:
-                    with st.spinner("⚕️ AI Mentor is analyzing your reasoning process..."):
-                            # 1. รวบรวม Data Synthesis จาก Reasoning Map (Tab 2)
-                            user_map = f"Positives: {st.session_state.get('map_pos', '')}, Negatives: {st.session_state.get('map_neg', '')}"
-                            
-                            # 2. เรียกใช้ AI Mentor ของจริง (แทนการสุ่ม)
-                            ai_response = get_ai_feedback_v9_5(
-                                user_dx=dx_in, 
-                                user_re=f"Rationale: {re_in} | SBAR: {h_s}, {h_b}, {h_a}, {h_r}",
-                                user_map=user_map,
-                                target=c.get('answer'),
-                                role=profession,
-                                time_taken=elapsed
-                            )
-                            
-                            # 3. เก็บผลลัพธ์ลง Session State เพื่อแสดงผล
-                            st.session_state.ai_feedback = ai_response
-                            
-                            # 4. บันทึกคะแนน (สามารถให้ AI สกัดคะแนนออกมาจาก Text ได้ หรือใช้ Logic ตรวจคำตอบเบื้องต้น)
-                            target_ans_str = str(c.get('answer')).lower()
-                            score = 10 if dx_in.lower() in target_ans_str else 5
-                            
-                            competency = {
-                                "Diagnosis": score,
-                                "Reasoning": 8, # หรือสกัดจาก AI Response
-                                "SBAR": 10 if all([h_s, h_b, h_a, h_r]) else 5,
-                                "Safety": 10 if u_dispo == "ICU/CCU" else 7
-                            }
-                            
-                            save_score_local(user_name, profession, score, c.get('block'), competency, elapsed)
-                            st.session_state.submitted = True
-                            st.rerun()
-            # --- ส่วนแสดงผลหลังจาก Submit แล้ว (ต่อจาก col_main) ---
-            if st.session_state.submitted:
-                st.divider()
-                st.subheader("👨‍🏫 AI Mentor Clinical Debriefing")
-                st.markdown(st.session_state.ai_feedback)
-                
-                with st.expander("🔑 View Gold Standard Answer"):
-                    st.success(f"**Target Diagnosis:** {c.get('answer')}")
-                    st.write(f"**Professional Perspective ({profession}):**")
-                    st.info(c.get('interprofessional_answers', {}).get(profession, "Consult Senior Staff."))
-                
-                if st.button("🏁 Finish & Start New Case"):
-                    st.session_state.submitted = False
-                    st.session_state.ai_feedback = ""
-                    st.session_state.start_time = time.time()
-                    st.rerun()
+                    with st.spinner("⚕️ AI Mentor is evaluating your reasoning..."):
+                        # 1. Synthesis Reasoning Map Data
+                        user_map = f"Positives: {st.session_state.get('map_pos', '')}, Negatives: {st.session_state.get('map_neg', '')}"
+                        
+                        # 2. Call AI Feedback
+                        ai_response = get_ai_feedback_v9_5(
+                            user_dx=dx_in, 
+                            user_re=f"Rationale: {re_in} | SBAR: {h_s}, {h_b}, {h_a}, {h_r} | Role Info: {role_info}",
+                            user_map=user_map,
+                            target=c.get('answer'),
+                            role=profession,
+                            time_taken=elapsed
+                        )
+                        
+                        # 3. Store in State
+                        st.session_state.ai_feedback = ai_response
+                        
+                        # 4. Scoring & Competency Logging
+                        target_ans_str = str(c.get('answer')).lower()
+                        score = 10 if dx_in.lower() in target_ans_str else 5
+                        
+                        competency = {
+                            "Diagnosis": score,
+                            "Reasoning": 8 if len(re_in) > 50 else 4,
+                            "SBAR": 10 if all([h_s, h_b, h_a, h_r]) else 5,
+                            "Safety": 10 if (u_dispo == "ICU/CCU" and score == 10) else 6
+                        }
+                        
+                        save_score_local(user_name, profession, score, c.get('block'), competency, elapsed)
+                        st.session_state.submitted = True
+                        st.rerun()
+                else:
+                    st.error("Please complete the Diagnosis and Rationale before submitting.")
+
+    # --- RESULTS AREA (DISPLAYED AFTER SUBMISSION) ---
+    if st.session_state.submitted:
+        st.divider()
+        
+        # 🚨 NEW: COGNITIVE BIAS ALERT BOX
+        def extract_bias_alert(ai_text):
+            if "Cognitive Bias" in ai_text:
+                parts = ai_text.split("Cognitive Bias")
+                if len(parts) > 1:
+                    return parts[1].split("\n")[0].replace(":", "").replace("**", "").strip()
+            return None
+
+        bias_msg = extract_bias_alert(st.session_state.ai_feedback)
+        if bias_msg and "none" not in bias_msg.lower():
+            st.error(f"🚨 **Cognitive Bias Detected:** {bias_msg}")
+        else:
+            st.success("✅ **Cognitive Calibration:** No significant bias identified in your reasoning.")
+
+        col_fb1, col_fb2 = st.columns([2, 1])
+        with col_fb1:
+            st.subheader("👨‍🏫 AI Mentor Clinical Debriefing")
+            st.markdown(st.session_state.ai_feedback)
+        
+        with col_fb2:
+            st.subheader("🔑 Gold Standard")
+            st.success(f"**Target Diagnosis:** {c.get('answer')}")
+            st.info(f"**{profession.capitalize()} Perspective:**\n\n{c.get('interprofessional_answers', {}).get(profession, 'Standard clinical protocol applies.')}")
+            
+        if st.button("🏁 Start New Simulation Session"):
+            st.session_state.submitted = False
+            st.session_state.ai_feedback = ""
+            st.session_state.start_time = time.time()
+            st.session_state.evolved = False
+            st.rerun()
 
 # --- 🏆 ANALYTICS HUB ---
 elif menu == "🏆 Analytics Hub":
