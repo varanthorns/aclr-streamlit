@@ -443,47 +443,42 @@ elif menu == "🧪 Clinical Simulator":
             
             if stress_level > 8:
                 st.warning("⚠️ High stress detected. Consider taking a short break.")
-            # --- SUBMIT LOGIC ---
+           # --- SUBMIT LOGIC ---
             if st.button("🚀 SUBMIT CLINICAL DECISION"):
                 if dx_in and re_in:
                     with st.spinner("⚕️ AI Mentor is analyzing your reasoning process..."):
-                        # ✅ แก้ไข: ดึงค่าจาก session_state มาใส่ตัวแปร f_thought ก่อน
-                        # ถ้าผู้ใช้ไม่ได้พิมพ์อะไรเลย ให้ใช้คำว่า "Not recorded" แทน
+                        # 1. ดึงข้อมูล First Thought และ Map (เช็คย่อหน้าให้ตรงกัน)
                         f_thought = st.session_state.get('first_thought', 'Not recorded')
                         user_map = f"Positives: {st.session_state.get('map_pos', '')}, Negatives: {st.session_state.get('map_neg', '')}"
-                            # 1. รวบรวม Data Synthesis จาก Reasoning Map (Tab 2)
-                            user_map = f"Positives: {st.session_state.get('map_pos', '')}, Negatives: {st.session_state.get('map_neg', '')}"
-                            
-                            # 2. เรียกใช้ AI Mentor ของจริง (แทนการสุ่ม)
-                            ai_response = get_ai_feedback_v9_5(
-                                user_dx=dx_in, 
-                                user_re=f"Rationale: {re_in} | SBAR: {h_s}, {h_b}, {h_a}, {h_r}",
-                                user_map=user_map,
-                                target=c.get('answer'),
-                                role=profession,
-                                time_taken=elapsed,
-                                confidence=u_conf, 
-                                stress=stress_level,
-                                first_thought=f_thought #
-                            )
-                            
-                            # 3. เก็บผลลัพธ์ลง Session State เพื่อแสดงผล
-                            st.session_state.ai_feedback = ai_response
-                            
-                            # 4. บันทึกคะแนน (สามารถให้ AI สกัดคะแนนออกมาจาก Text ได้ หรือใช้ Logic ตรวจคำตอบเบื้องต้น)
-                            target_ans_str = str(c.get('answer')).lower()
-                            score = 10 if dx_in.lower() in target_ans_str else 5
-                            
-                            competency = {
-                                "Diagnosis": score,
-                                "Reasoning": 8, # หรือสกัดจาก AI Response
-                                "SBAR": 10 if all([h_s, h_b, h_a, h_r]) else 5,
-                                "Safety": 10 if u_dispo == "ICU/CCU" else 7
-                            }
-                            
-                            save_score_local(user_name, profession, score, c.get('block'), competency, elapsed)
-                            st.session_state.submitted = True
-                            st.rerun()
+                        
+                        # 2. เรียกใช้ AI Mentor
+                        ai_response = get_ai_feedback_v9_5(
+                            user_dx=dx_in, 
+                            user_re=f"Rationale: {re_in} | SBAR: {h_s}, {h_b}, {h_a}, {h_r}",
+                            user_map=user_map,
+                            target=c.get('answer'),
+                            role=profession,
+                            time_taken=elapsed,
+                            confidence=u_conf,
+                            stress=stress_level,
+                            first_thought=f_thought
+                        )
+                        
+                        # 3. เก็บผลลัพธ์และคำนวณคะแนน
+                        st.session_state.ai_feedback = ai_response
+                        target_ans_str = str(c.get('answer')).lower()
+                        score = 10 if dx_in.lower() in target_ans_str else 5
+                        
+                        competency = {
+                            "Diagnosis": score,
+                            "Reasoning": 8, 
+                            "SBAR": 10 if all([h_s, h_b, h_a, h_r]) else 5,
+                            "Safety": 10 if u_dispo == "ICU/CCU" else 7
+                        }
+                        
+                        save_score_local(user_name, profession, score, c.get('block'), competency, elapsed)
+                        st.session_state.submitted = True
+                        st.rerun()
     # --- ส่วนแสดงผลหลังจาก Submit แล้ว (ต่อจาก col_main) ---
     if st.session_state.submitted:
         st.divider()
