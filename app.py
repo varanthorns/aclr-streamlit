@@ -338,22 +338,43 @@ elif menu == "🧪 Clinical Simulator":
             st.markdown(f"### 🧬 Professional Entry: {profession.upper()}")
             dx_in = st.text_input("🩺 Final Assessment / Diagnosis", key="entry_dx")
             
-            # --- DYNAMIC FIELDS ---
+            # ===================== ✍️ DYNAMIC PROFESSIONAL FIELDS =====================
             role_info = ""
+            
             if profession == "doctor":
-                # เพิ่ม key="doctor_ddx" เพื่อป้องกัน ID ซ้ำ
-                ddx = st.multiselect("🔍 DDx", ["Sepsis", "MI", "Stroke", "IE", "Pneumonia", "Heart Failure"], key="doctor_ddx")
-                plan = st.text_input("💊 Treatment Plan", key="doctor_plan")
+                ddx = st.multiselect("🔍 Differential Diagnosis (DDx)", ["Sepsis", "MI", "Stroke", "IE", "Pneumonia", "Heart Failure", "PE"], key="doc_ddx")
+                plan = st.text_input("💊 Immediate Intervention Plan", key="doc_plan")
                 role_info = f"DDx: {ddx}, Plan: {plan}"
+            
             elif profession == "pharmacy":
-                dosing = st.text_input("⚖️ Dosing Logic")
-                interaction = st.text_input("⚠️ Interactions")
+                dosing = st.text_input("⚖️ Pharmacokinetic/Dosing Logic", key="pharma_dosing")
+                interaction = st.text_input("⚠️ Drug-Drug Interactions (DDI)", key="pharma_interact")
                 role_info = f"Dosing: {dosing}, Interaction: {interaction}"
+            
             elif profession == "nursing":
-                vitals = st.multiselect("📉 Watch Vitals", ["BP", "SpO2", "Temp", "GCS"])
-                n_care = st.text_input("🛌 Nursing Intervention")
-                role_info = f"Vitals: {vitals}, Care: {n_care}"
-            # ... (Other roles)
+                vitals_focus = st.multiselect("📉 Critical Vitals to Monitor", ["BP", "SpO2", "Temp", "GCS", "MAP", "Urine Output"], key="nurse_vitals")
+                n_care = st.text_input("🛌 Immediate Nursing Intervention", key="nurse_care")
+                role_info = f"Vitals Focus: {vitals_focus}, Care Plan: {n_care}"
+            
+            elif profession == "ams":
+                validity = st.selectbox("🔬 Specimen Validity/Quality", ["Optimal", "Hemolyzed", "Clotted", "Inadequate Volume"], key="ams_valid")
+                lab_interp = st.text_area("🧪 Advanced Lab Interpretation", key="ams_lab")
+                role_info = f"Validity: {validity}, Lab Interp: {lab_interp}"
+            
+            elif profession == "dentistry":
+                oral_site = st.text_input("🦷 Odontogenic Source / Site", key="dent_site")
+                procedure = st.text_input("💉 Dental Procedure/Management", key="dent_proc")
+                role_info = f"Site: {oral_site}, Procedure: {procedure}"
+            
+            elif profession == "vet":
+                species = st.text_input("🐾 Species Specific Considerations", key="vet_species")
+                zoonotic = st.selectbox("☣️ Zoonotic Potential", ["Low", "Moderate", "High", "Critical"], key="vet_zoo")
+                role_info = f"Species: {species}, Zoonotic: {zoonotic}"
+            
+            elif profession == "public health":
+                epi_risk = st.text_input("🌏 Epidemiological Risk Factors", key="ph_epi")
+                prevention = st.text_area("🛡️ Population-level Prevention", key="ph_prev")
+                role_info = f"Epi Risk: {epi_risk}, Prevention: {prevention}"
 
             re_in = st.text_area("✍️ Pathophysiological Rationale", height=120, key="entry_re")
             
