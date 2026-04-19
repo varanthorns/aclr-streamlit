@@ -465,6 +465,18 @@ elif menu == "🏆 Analytics Hub":
     else: 
         # กรณีรันครั้งแรกแล้วยังไม่มีไฟล์ .csv
         st.info("No simulation data found. Please start by using the Clinical Simulator.")
+    if existing_cols:
+        st.subheader("🕸️ Competency Radar")
+        avg_values = df[existing_cols].mean().tolist()
+        
+        fig = go.Figure(data=go.Scatterpolar(
+          r=avg_values + [avg_values[0]], # ปิดวงกลม
+          theta=existing_cols + [existing_cols[0]],
+          fill='toself',
+          line_color='#1976D2'
+        ))
+        fig.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 10])))
+        st.plotly_chart(fig, use_container_width=True)
 
 # --- ⚠️ สำคัญ: ลบโค้ดที่ซ้ำซ้อนหรือหลุดอยู่ล่างสุดของไฟล์ทิ้ง ---
 # ตรวจสอบว่าไม่มีบรรทัด 'existing_cols = ...' หลุดอยู่นอกแนว (Indentation) ของ elif นะครับ
