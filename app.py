@@ -1,6 +1,7 @@
 import streamlit as st
 import json, random, pandas as pd, os, time
 import google.generativeai as genai
+import plotly.graph_objects as go
 # ===================== ⚙️ GLOBAL CONFIG =====================
 DB_FILE = "clinical_scores.csv"  #
 
@@ -122,6 +123,18 @@ def get_ai_feedback_v9_5(user_dx, user_re, user_map, target, role, time_taken, c
         return response.text
     except Exception as e:
         return f"AI Mentor is processing... (Note: {str(e)})"
+    [Response Format - JSON REQUIRED AT THE END]
+    Provide your full feedback in text first, then end with a JSON block:
+    {
+      "scores": {
+        "Diagnosis": 0-10,
+        "Reasoning": 0-10,
+        "SBAR": 0-10,
+        "Safety": 0-10
+      },
+      "bias_detected": "string",
+      "pearl": "string"
+    }
 
 # ===================== 4. DATA LOADING =====================
 @st.cache_data
@@ -435,45 +448,86 @@ elif menu == "🧪 Clinical Simulator":
 elif menu == "🏆 Analytics Hub":
     st.header("🏆 Performance Analytics Dashboard")
     
-    # 1. เช็คว่ามีไฟล์ DB หรือไม่
+    # 1. เช็คว่ามีไฟล์ Database หรือไม่
     if os.path.exists(DB_FILE):
         df = pd.read_csv(DB_FILE)
         
-        # 2. เช็คว่าในไฟล์มีข้อมูลหรือไม่ (ป้องกัน Empty CSV)
+        # 2. เช็คว่าในไฟล์มีข้อมูลหรือไม่
         if not df.empty:
-            st.dataframe(df.sort_values(by="Timestamp", ascending=False), use_container_width=True)
-            st.divider()
-            
-            # Metrics
-            c1, c2, c3 = st.columns(3)
-            c1.metric("Simulations", len(df))
-            c2.metric("Mean Score", f"{df['Score'].mean():.1f}/10")
-            
-            # กราฟ Learning Curve
-            st.subheader("📈 Learning Curve")
+            # จัดรูปแบบวันที่เพื่อให้เรียงลำดับและทำกราฟได้ถูกต้อง
             if "Timestamp" in df.columns:
                 df["Timestamp"] = pd.to_datetime(df["Timestamp"])
-                st.line_chart(df.set_index("Timestamp")["Score"])
-                
-            # --- ✅ ย้ายก้อนที่มีปัญหาเข้ามาไว้ในนี้ ---
-            st.subheader("🧠 Competency Breakdown")
-            comp_cols = ["Diagnosis", "Reasoning", "SBAR", "Safety"]
-            existing_cols = [c for c in comp_cols if c in df.columns]
             
+            # --- ส่วนแสดงตารางข้อมูลล่าสุด ---
+            with st.expander("📂 View Raw Simulation Data", expanded=False):
+                st.dataframe(df.sort_values(by="Timestamp", ascending=False), use_container_width=True)
+            
+            st.divider()
+
+            # --- ส่วน Metrics สรุปผล ---
+            c1, c2, c3 = st.columns(3)
+            c1.metric("Total Simulations", len(df))
+            c2.metric("Average Score", f"{df['Score'].mean():.1f}/10")
+            if "Time" in df.columns:
+                c3.metric("Avg. Speed (sec)", f"{df['Time'].mean():.0f}s")
+            
+            st.divider()
+
+            # --- ส่วนกราฟพัฒนาการ (Learning Curve & Competency) ---
+            col_graph1, col_graph2 = st.columns(2)
+
+            with col_graph1:
+                st.subheader("📈 Learning Curve")
+                if "Timestamp" in df.columns:
+                    # แสดงกราฟเส้นความต่อเนื่องของคะแนน
+                    chart_data = df.set_index("Timestamp")["Score"]
+                    st.line_chart(chart_data)
+                else:
+                    st.info("Timestamp data missing for trend chart.")
+
+            with col_graph2:
+                st.subheader("🧠 Multi-Dimensional Competency")
+                # เตรียมข้อมูลสำหรับ Spider Chart
+                comp_cols = ["Diagnosis", "Reasoning", "SBAR", "Safety"]
+                # กรองเฉพาะ Column ที่มีอยู่จริงในไฟล์ CSV
+                existing_cols = [c for c in comp_cols if c in df.columns]
+
+                if len(existing_cols) >= 3:
+                    # คำนวณค่าเฉลี่ยของแต่ละทักษะ
+                    avg_scores = df[existing_cols].mean().tolist()
+                    
+                    # สร้าง Spider Chart ด้วย Plotly
+                    fig = go.Figure()
+                    fig.add_trace(go.Scatterpolar(
+                        r=avg_scores + [avg_scores[0]], # เพิ่มจุดแรกปิดท้ายลูป
+                        theta=existing_cols + [existing_cols[0]],
+                        fill='toself',
+                        line_color='#1976D2',
+                        fillcolor='rgba(25, 118, 210, 0.3)'
+                    ))
+
+                    fig.update_layout(
+                        polar=dict(
+                            radialaxis=dict(visible=True, range=[0, 10], tickfont=dict(size=10))
+                        ),
+                        showlegend=False,
+                        margin=dict(l=40, r=40, t=40, b=40)
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+                else:
+                    st.info("Need at least 3 competency metrics to generate Spider Chart.")
+
+            # --- กราฟแท่งแสดงค่าเฉลี่ยรายด้าน (Bar Chart) ---
             if existing_cols:
-                st.bar_chart(df[existing_cols].mean())
+                with st.expander("📊 Detailed Competency Breakdown (Bar Chart)"):
+                    st.bar_chart(df[existing_cols].mean())
+
         else:
             st.warning("Database is empty. Please complete a case in the Simulator.")
             
     else: 
-        # กรณีรันครั้งแรกแล้วยังไม่มีไฟล์ .csv
         st.info("No simulation data found. Please start by using the Clinical Simulator.")
 
-# --- ⚠️ สำคัญ: ลบโค้ดที่ซ้ำซ้อนหรือหลุดอยู่ล่างสุดของไฟล์ทิ้ง ---
-# ตรวจสอบว่าไม่มีบรรทัด 'existing_cols = ...' หลุดอยู่นอกแนว (Indentation) ของ elif นะครับ
-    
+# --- ส่วนท้ายไฟล์ (วางนอกเงื่อนไข IF/ELIF ทุกตัว) ---
 st.markdown("---")
 st.caption("FTF-CRA Global v9.9.5 | Adaptive Cognitive Load–Driven AI Clinical Reasoning Loop | © 2026")
-# --- 🧪 UPDATE: AI PROMPT ENHANCEMENT ---
-# (หมายเหตุ: ควรไปปรับแก้ฟังก์ชัน get_ai_feedback เดิมให้รับค่าเหล่านี้เข้าไปตรวจด้วย 
-# เพื่อให้ AI ตรวจสอบ 'กระบวนการคิด' ไม่ใช่แค่ 'คำตอบสุดท้าย')
