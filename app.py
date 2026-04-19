@@ -81,37 +81,38 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # ===================== 3. API & DATABASE SETUP (UPDATED) =====================
-def get_ai_feedback_v9_5(user_dx, user_re, user_map, target, role, time_taken):
+def get_ai_feedback_v9_5(user_dx, user_re, user_map, target, role, time_taken, confidence, stress):
     model = genai.GenerativeModel('gemini-1.5-flash')
     
-    # Prompt ตัวนี้จะวิเคราะห์ 'กระบวนการคิด' (Reasoning Process) ตามที่คุณต้องการ
+    # เพิ่มมิติการวิเคราะห์ Metacognition (การประเมินความมั่นใจและความเครียดของตัวเอง)
     prompt = f"""
-    Act as a Senior Clinical Professor. Evaluate this {role}'s clinical reasoning process.
-    
-    [User Data]
-    - Diagnosis: {user_dx}
-    - Reasoning & SBAR: {user_re}
-    - Clinical Reasoning Map: {user_map}
-    - Gold Standard Reference: {target}
-    - Time Taken: {time_taken} seconds (Criticality factor).
-    
-    [Evaluation Tasks]
-    1. Clinical Logic Alignment: Did the student link the 'Pertinent Positives' correctly to the Diagnosis?
-    2. SBAR Quality: Is the handover professional, concise, and safe? 
-    3. Cognitive Noise Filter: Did they focus on key findings vs clinical noise?
-    4. Time-Criticality: Based on {time_taken}s, was their decision-making efficient for this severity level?
+    Act as a Senior Clinical Professor and Cognitive Scientist. 
+    Evaluate the clinical reasoning of a {role}.
 
-    [Response Format]
-    - Diagnosis Score (0-10)
-    - Reasoning Score (0-10)
-    - SBAR Score (0-10)
-    - Safety Score (0-10)
-    - **Overall Score (0-10):**
-    - **Strengths:**
-    - **Critical Gaps:**
-    - **Cognitive Bias (if any):**
-    - **Professional Pearl:**
-    - **Well-being Tip:**
+    [Clinical Context]
+    - User's Diagnosis: {user_dx}
+    - Gold Standard Answer: {target}
+    - Time Elapsed: {time_taken}s
+    - User Confidence: {confidence}%
+    - Reported Stress: {stress}/10
+
+    [Reasoning Artifacts]
+    - Reasoning Map (Synthesis): {user_map}
+    - Rationale & SBAR Handover: {user_re}
+
+    [Evaluation Tasks - Critical Analysis]
+    1. Information Synthesis: Did the user correctly identify 'Pertinent Positives' from the case? 
+    2. Cognitive Bias: Did the user show signs of 'Premature Closure' or 'Anchoring Bias'?
+    3. Noise vs. Signal: Did they filter out irrelevant lab data?
+    4. Self-Awareness: Compare their confidence ({confidence}%) with their actual accuracy. Are they 'Overconfident' or 'Underconfident'?
+    5. Role-Specific Logic: Does the rationale match the standard of care for a {role}?
+
+    [Required Output Format - Strict]
+    - **Metacognitive Score (0-10):** (Score based on how well they know what they know)
+    - **Logic Consistency Score (0-10):** (Does the rationale actually lead to the diagnosis?)
+    - **Diagnostic Accuracy:** (Correct/Partial/Incorrect)
+    - **Clinical Pearl:** (One high-level insight this user needs to grow)
+    - **Feedback:** (Brief, professional, and encouraging)
     
     English only.
     """
@@ -120,7 +121,7 @@ def get_ai_feedback_v9_5(user_dx, user_re, user_map, target, role, time_taken):
         response = model.generate_content(prompt)
         return response.text
     except Exception as e:
-        return f"AI Mentor is currently offline (Error: {str(e)}). Please review the Gold Standard Answer."
+        return f"AI Mentor is processing... (Note: {str(e)})"
 
 # ===================== 4. DATA LOADING =====================
 @st.cache_data
@@ -392,6 +393,8 @@ elif menu == "🧪 Clinical Simulator":
                                 target=c.get('answer'),
                                 role=profession,
                                 time_taken=elapsed
+                                confidence=u_conf, # ค่าจาก slider
+                                stress=stress_level # ค่าจาก slider
                             )
                             
                             # 3. เก็บผลลัพธ์ลง Session State เพื่อแสดงผล
