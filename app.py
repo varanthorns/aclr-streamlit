@@ -3,6 +3,9 @@ import json, random, pandas as pd, os, time
 import google.generativeai as genai
 # ===================== ⚙️ GLOBAL CONFIG =====================
 DB_FILE = "clinical_scores.csv"  #
+if "existing_cols" not in st.session_state:
+    st.session_state.existing_cols = []
+existing_cols = []  #
 
 # ===================== 🔧 1. FIX + NEW CORE SYSTEM =====================
 
