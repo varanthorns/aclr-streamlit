@@ -436,42 +436,56 @@ elif menu == "🧪 Clinical Simulator":
             if stress_level > 8:
                 st.warning("⚠️ High stress detected. Take a deep breath before final submission.")
 
-            # --- SUBMIT LOGIC ---
+            # --- SUBMIT LOGIC (Full Optimized Version) ---
             if st.button("🚀 SUBMIT CLINICAL DECISION"):
                 if dx_in and re_in:
                     with st.spinner("⚕️ AI Mentor is evaluating your reasoning..."):
-                        # 1. Synthesis Reasoning Map Data
+                        # 1. รวบรวมข้อมูลกระบวนการคิด
                         user_map = f"Positives: {st.session_state.get('map_pos', '')}, Negatives: {st.session_state.get('map_neg', '')}"
                         
-                        # 2. Call AI Feedback
+                        # 2. เรียก AI Mentor (เช็คให้ชัวร์ว่าตัวแปรครบ)
                         ai_response = get_ai_feedback_v9_5(
                             user_dx=dx_in, 
                             user_re=f"Rationale: {re_in} | SBAR: {h_s}, {h_b}, {h_a}, {h_r} | Role Info: {role_info}",
                             user_map=user_map,
                             target=c.get('answer'),
-                            role=profession,
+                            role=profession if 'profession' in locals() else "practitioner",
                             time_taken=elapsed
                         )
                         
-                        # 3. Store in State
+                        # 3. บันทึกผลลัพธ์ลง Session State
                         st.session_state.ai_feedback = ai_response
                         
-                        # 4. Scoring & Competency Logging
+                        # 4. คำนวณคะแนน Competency
                         target_ans_str = str(c.get('answer')).lower()
-                        score = 10 if dx_in.lower() in target_ans_str else 5
+                        score_val = 10 if dx_in.lower() in target_ans_str else 5
                         
-                        competency = {
-                            "Diagnosis": score,
+                        competency_data = {
+                            "Diagnosis": score_val,
                             "Reasoning": 8 if len(re_in) > 50 else 4,
                             "SBAR": 10 if all([h_s, h_b, h_a, h_r]) else 5,
-                            "Safety": 10 if (u_dispo == "ICU/CCU" and score == 10) else 6
+                            "Safety": 10 if (u_dispo == "ICU/CCU" and score_val == 10) else 6
                         }
                         
-                        save_score_local(user_name, profession, score, c.get('block'), competency, elapsed)
+                        # 5. บันทึกลงฐานข้อมูล (CSV)
+                        # ดึงชื่อ user และ profession จากแหล่งที่ชัวร์ที่สุด
+                        final_user = user_name if 'user_name' in locals() else "User_01"
+                        final_role = profession if 'profession' in locals() else "Clinical"
+                        
+                        save_score_local(
+                            user=final_user, 
+                            role=final_role, 
+                            score=score_val, 
+                            block=c.get('block', 'General'), 
+                            competency=competency_data, 
+                            time_taken=elapsed
+                        )
+                        
+                        # 6. อัปเดตสถานะและ Refresh หน้าจอ
                         st.session_state.submitted = True
                         st.rerun()
                 else:
-                    st.error("Please complete the Diagnosis and Rationale before submitting.")
+                    st.error("❌ Please complete the Diagnosis and Rationale before submitting.")
 
     # --- RESULTS AREA (DISPLAYED AFTER SUBMISSION) ---
     if st.session_state.submitted:
