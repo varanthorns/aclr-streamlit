@@ -1,12 +1,13 @@
 import streamlit as st
 import json, random, pandas as pd, os, time
 import google.generativeai as genai
+
 # ===================== ⚙️ GLOBAL CONFIG =====================
-DB_FILE = "clinical_scores.csv"  #
+DB_FILE = "clinical_scores.csv"
 
-# ===================== 🔧 1. API & CORE SYSTEM SETUP =====================
+# ===================== 🔧 1. CORE SYSTEM & API SETUP =====================
 
-# 🔐 1.1 ตั้งค่า API Key ให้จบในตัว (ป้องกัน SyntaxError: expected 'except')
+# 🔐 1.1 API Setup - ปิดจบก้อน try/except ให้เรียบร้อย
 try:
     if "GEMINI_API_KEY" in st.secrets:
         GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
@@ -15,22 +16,16 @@ try:
 except Exception:
     GEMINI_API_KEY = "DEMO_KEY"
 
-# เชื่อมต่อ AI Mentor
 genai.configure(api_key=GEMINI_API_KEY)
 
-# 💾 1.2 ฟังก์ชันบันทึกข้อมูล (วางนอกเงื่อนไขเมนูเพื่อให้เรียกใช้ได้ทุกที่)
+# 💾 1.2 Database Functions
 def save_score_local(user, role, score, block, competency=None, time_taken=0):
     new_entry = {
-        "User": user,
-        "Role": role,
-        "Score": score,
-        "Block": block,
-        "Time": time_taken,
-        "Timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
+        "User": user, "Role": role, "Score": score, "Block": block,
+        "Time": time_taken, "Timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
     }
     if competency:
         new_entry.update(competency)
-
     df_new = pd.DataFrame([new_entry])
     if os.path.exists(DB_FILE):
         df_old = pd.read_csv(DB_FILE)
@@ -39,51 +34,73 @@ def save_score_local(user, role, score, block, competency=None, time_taken=0):
         df = df_new
     df.to_csv(DB_FILE, index=False)
 
-# 🧠 1.3 ระบบ Adaptive Learning (วิเคราะห์ประวัติผู้ใช้)
-def get_user_history(user):
+def get_adaptive_difficulty(user):
     if os.path.exists(DB_FILE):
         df = pd.read_csv(DB_FILE)
-        return df[df["User"] == user]
-    return pd.DataFrame()
+        user_df = df[df["User"] == user]
+        if len(user_df) >= 3:
+            avg = user_df["Score"].mean()
+            if avg < 6: return "easy"
+            elif avg < 8: return "medium"
+            else: return "hard"
+    return "easy"
 
-def get_adaptive_difficulty(user):
-    df = get_user_history(user)
-    if len(df) < 3: return "easy"
-    avg_score = df["Score"].mean()
-    if avg_score < 6: return "easy"
-    elif avg_score < 8: return "medium"
-    else: return "hard"
+# ===================== 🎨 2. UI & SIDEBAR NAVIGATION =====================
 
-# ===================== 🎨 2. CONFIG & NAVIGATION =====================
+st.set_page_config(layout="wide", page_title="FTF-CRA Platform", page_icon="🩺")
 
-# ⚙️ 2.1 UI Configuration
-st.set_page_config(layout="wide", page_title="FTF-CRA Clinical Platform", page_icon="🩺")
-
-# 🎨 2.2 Medical-Grade CSS
-st.markdown("""
-    <style>
-    .main { background-color: #f8f9fa; }
-    .stButton>button { width: 100%; border-radius: 8px; height: 3.5em; background-color: #1976D2 !important; color: white !important; font-weight: bold; }
-    .stMetric { background-color: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-left: 5px solid #1976D2; }
-    .stress-timer { font-size: 28px; font-weight: bold; color: #d32f2f; text-align: center; border: 3px solid #d32f2f; padding: 10px; border-radius: 15px; background: white; }
-    </style>
-    """, unsafe_allow_html=True)
-
-# 🧭 2.3 Sidebar Navigation (ประกาศตัวแปร menu ที่นี่)
+# 🧭 2.1 Sidebar - สร้างตัวแปร menu ที่นี่
 with st.sidebar:
     st.title("🩺 FTF-CRA v9.9.5")
+    # ตัวแปร menu ตัวเอกของงาน
     menu = st.radio("Main Menu", ["📖 Manual & Standards", "🧪 Clinical Simulator", "🏆 Analytics Hub"])
+    
     st.divider()
     user_name = st.text_input("👤 Practitioner Name", "User_01")
     profession = st.selectbox("👩‍⚕️ Clinical Role", ["Doctor", "Pharmacy", "Nursing", "AMS", "Dentistry", "Vet"]).lower()
     
-    # Adaptive Logic ใน Sidebar
-    adaptive_mode = st.checkbox("🧠 AI Adaptive Difficulty", value=False)
-    f_diff = st.select_slider("Set Difficulty", options=["easy", "medium", "hard"], value="medium")
+    adaptive_mode = st.checkbox("🧠 Adaptive Difficulty", value=False)
     if adaptive_mode:
         f_diff = get_adaptive_difficulty(user_name)
-        st.info(f"AI Selected: {f_diff.upper()}")
+    else:
+        f_diff = st.select_slider("Difficulty", options=["easy", "medium", "hard"], value="medium")
 
+# ===================== 🚥 3. PAGE ROUTING (The Fix) =====================
+
+# ใช้โครงสร้าง if-elif-elif เพียงชุดเดียวในการคุมทั้ง App
+if menu == "📖 Manual & Standards":
+    st.header("📖 Clinical Operations & User Guide")
+    st.info("System Philosophy: Adaptive Cognitive Load–Driven AI Loop")
+    # --- นายสามารถยกก้อน Manual มาวางต่อตรงนี้ได้เลย ---
+
+
+elif menu == "🧪 Clinical Simulator":
+    st.header("🧪 Clinical Simulator")
+    # --- นายสามารถยกก้อน Simulator (Tabs, Input, AI Feedback) มาวางตรงนี้ ---
+    st.write(f"Current Mode: {f_diff.upper()}")
+
+
+elif menu == "🏆 Analytics Hub":
+    st.header("🏆 Performance Analytics Dashboard")
+    if os.path.exists(DB_FILE):
+        df = pd.read_csv(DB_FILE)
+        if not df.empty:
+            # Metrics
+            m1, m2, m3 = st.columns(3)
+            m1.metric("Total Cases", len(df))
+            m2.metric("Mean Score", f"{df['Score'].mean():.1f}")
+            m3.metric("Avg Speed", f"{df['Time'].mean():.0f}s")
+            
+            # Chart
+            st.subheader("📈 Learning Curve")
+            df["Timestamp"] = pd.to_datetime(df["Timestamp"])
+            st.line_chart(df.sort_values("Timestamp").set_index("Timestamp")["Score"])
+        else:
+            st.warning("No data yet.")
+    else:
+        st.info("No database found.")
+
+# ===================== 🏁 END OF ROUTING =====================
 # ===================== 🧠 ADAPTIVE LEARNING =====================
 
 def get_user_history(user):
