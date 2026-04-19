@@ -9,69 +9,15 @@ existing_cols = []  #
 
 # ===================== 🔧 1. FIX + NEW CORE SYSTEM =====================
 
-# 🔐 FIX: ใช้ secrets แทน API key hardcode (ปลอดภัย)
+# 🔐 1.1 ปิด API Setup ให้เรียบร้อยก่อนเริ่มเงื่อนไขอื่น
 try:
-    GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]# --- 🏆 ANALYTICS HUB ---
-elif menu == "🏆 Analytics Hub":
-    st.header("🏆 Performance Analytics Dashboard")
-    
-    if os.path.exists(DB_FILE):
-        df = pd.read_csv(DB_FILE)
-        
-        if not df.empty:
-            # 1. แสดงตารางข้อมูลล่าสุด
-            st.dataframe(df.sort_values(by="Timestamp", ascending=False), use_container_width=True)
-            st.divider()
-            
-            # 2. คำนวณ Metrics หลัก
-            c1, c2, c3 = st.columns(3)
-            c1.metric("Total Simulations", len(df))
-            c2.metric("Mean Diagnosis Score", f"{df['Score'].mean():.1f}/10")
-            c3.metric("Avg Time Taken", f"{df['Time'].mean():.0f}s")
-            
-            # 3. กราฟ Learning Curve (Score over time)
-            st.subheader("📈 Learning Curve (Overall Score)")
-            df["Timestamp"] = pd.to_datetime(df["Timestamp"])
-            st.line_chart(df.set_index("Timestamp")["Score"])
-            
-            # 4. Competency Breakdown (แก้จุดที่ Error)
-            st.subheader("🧠 Competency Radar")
-            comp_cols = ["Diagnosis", "Reasoning", "SBAR", "Safety"]
-            
-            # ตรวจสอบว่าในไฟล์มี Column เหล่านี้จริงๆ ไหม
-            existing_cols = [col for col in comp_cols if col in df.columns]
-            
-            if existing_cols:
-                # คำนวณค่าเฉลี่ย
-                avg_series = df[existing_cols].mean()
-                
-                # แสดงเป็น Bar Chart แบบง่ายก่อน
-                st.bar_chart(avg_series)
-                
-                # (Optional) ถ้าลง plotly ไว้ จะสวยมากครับ
-                try:
-                    import plotly.graph_objects as go
-                    fig = go.Figure(data=go.Scatterpolar(
-                        r=avg_series.values.tolist() + [avg_series.values[0]],
-                        theta=existing_cols + [existing_cols[0]],
-                        fill='toself',
-                        line_color='#1976D2'
-                    ))
-                    fig.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 10])))
-                    st.plotly_chart(fig, use_container_width=True)
-                except ImportError:
-                    st.info("Tip: Install 'plotly' to view the Radar Chart.")
-                    
-        else:
-            st.warning("Database is empty. Please complete a case in the Simulator first.")
-    else: 
-        st.info("No simulation data found. Please start by using the Clinical Simulator.")
-except:
+    GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
+except Exception:
     GEMINI_API_KEY = "DEMO_KEY"
 
 genai.configure(api_key=GEMINI_API_KEY)
 
-# ✅ FIX: function ที่หาย
+# 💾 1.2 ฟังก์ชันบันทึกข้อมูล (วางไว้ตรงนี้เพื่อให้ทุกเมนูเรียกใช้ได้)
 def save_score_local(user, role, score, block, competency=None, time_taken=0):
     new_entry = {
         "User": user,
@@ -81,20 +27,65 @@ def save_score_local(user, role, score, block, competency=None, time_taken=0):
         "Time": time_taken,
         "Timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
     }
-
-    # เพิ่ม competency tracking
     if competency:
         new_entry.update(competency)
 
     df_new = pd.DataFrame([new_entry])
-
     if os.path.exists(DB_FILE):
         df_old = pd.read_csv(DB_FILE)
         df = pd.concat([df_old, df_new], ignore_index=True)
     else:
         df = df_new
-
     df.to_csv(DB_FILE, index=False)
+
+# ---------------------------------------------------------
+# 🏆 1.3 เมนู ANALYTICS HUB (ต้องอยู่นอกก้อน try/except)
+# ---------------------------------------------------------
+if menu == "🏆 Analytics Hub":
+    st.header("🏆 Performance Analytics Dashboard")
+    
+    if os.path.exists(DB_FILE):
+        df = pd.read_csv(DB_FILE)
+        if not df.empty:
+            # 1. ตารางข้อมูล
+            st.dataframe(df.sort_values(by="Timestamp", ascending=False), use_container_width=True)
+            st.divider()
+            
+            # 2. Metrics หลัก
+            c1, c2, c3 = st.columns(3)
+            c1.metric("Total Simulations", len(df))
+            c2.metric("Mean Score", f"{df['Score'].mean():.1f}/10")
+            c3.metric("Avg Speed", f"{df['Time'].mean():.0f}s")
+            
+            # 3. กราฟ Learning Curve
+            st.subheader("📈 Learning Curve")
+            df["Timestamp"] = pd.to_datetime(df["Timestamp"])
+            st.line_chart(df.sort_values("Timestamp").set_index("Timestamp")["Score"])
+            
+            # 4. Competency Breakdown
+            st.subheader("🧠 Competency Radar")
+            comp_cols = ["Diagnosis", "Reasoning", "SBAR", "Safety"]
+            # ดึงเฉพาะคอลัมน์ที่มีอยู่จริงในไฟล์ ณ ขณะนั้น
+            found_cols = [col for col in comp_cols if col in df.columns]
+            
+            if found_cols:
+                avg_series = df[found_cols].mean()
+                try:
+                    import plotly.graph_objects as go
+                    fig = go.Figure(data=go.Scatterpolar(
+                        r=avg_series.values.tolist() + [avg_series.values[0]],
+                        theta=found_cols + [found_cols[0]],
+                        fill='toself',
+                        line_color='#1976D2'
+                    ))
+                    fig.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 10])), showlegend=False)
+                    st.plotly_chart(fig, use_container_width=True)
+                except Exception:
+                    st.bar_chart(avg_series)
+        else:
+            st.warning("Database is empty. Please complete a case first.")
+    else:
+        st.info("No simulation data found yet.")
 
 # ===================== 🧠 ADAPTIVE LEARNING =====================
 
@@ -141,43 +132,46 @@ st.markdown("""
 def get_ai_feedback_v9_5(user_dx, user_re, user_map, target, role, time_taken):
     model = genai.GenerativeModel('gemini-1.5-flash')
     
-    # Prompt ตัวนี้จะวิเคราะห์ 'กระบวนการคิด' (Reasoning Process) ตามที่คุณต้องการ
+    # Prompt ตัวใหม่ที่เน้นวิเคราะห์ Cognitive Load และ Reasoning Logic
     prompt = f"""
-    Act as a Senior Clinical Professor. Evaluate this {role}'s clinical reasoning process.
+    Act as a Senior Clinical Professor. Evaluate this {role}'s clinical reasoning.
     
-    [User Data]
+    [STUDENT DATA]
     - Diagnosis: {user_dx}
-    - Reasoning & SBAR: {user_re}
-    - Clinical Reasoning Map: {user_map}
-    - Gold Standard Reference: {target}
-    - Time Taken: {time_taken} seconds (Criticality factor).
+    - Reasoning/SBAR: {user_re}
+    - Reasoning Map (Positives/Negatives): {user_map}
+    - Reference Answer: {target}
+    - Time Taken: {time_taken}s
     
-    [Evaluation Tasks]
-    1. Clinical Logic Alignment: Did the student link the 'Pertinent Positives' correctly to the Diagnosis?
-    2. SBAR Quality: Is the handover professional, concise, and safe? 
-    3. Cognitive Noise Filter: Did they focus on key findings vs clinical noise?
-    4. Time-Criticality: Based on {time_taken}s, was their decision-making efficient for this severity level?
+    [CRITICAL EVALUATION STEPS]
+    1. Mapping Logic: Did the student correctly identify 'Pertinent Positives' that lead to the diagnosis? Did they miss 'Clinical Noise'?
+    2. Mechanism: Does their pathophysiology rationale explain HOW the symptoms occurred?
+    3. SBAR Handover: Is it safe for a real-world transition of care?
+    
+    [STRICT RESPONSE FORMAT - Use Markdown]
+    ### 📊 Performance Metrics
+    - **Diagnosis Score:** (0-10)
+    - **Reasoning Score:** (0-10)
+    - **SBAR Quality:** (0-10)
+    - **Safety & Disposition:** (0-10)
+    
+    ### 🧠 Clinical Insight
+    - **Strengths:** - **Logic Gaps:** (Check if their reasoning map matches their diagnosis)
+    - **Cognitive Bias:** (Identify specific biases like Anchoring, Search Satisficing)
+    
+    ### 💡 Professor's Pearl
+    (A high-level clinical tip for this specific case to enhance professional expertise)
 
-    [Response Format]
-    - Diagnosis Score (0-10)
-    - Reasoning Score (0-10)
-    - SBAR Score (0-10)
-    - Safety Score (0-10)
-    - **Overall Score (0-10):**
-    - **Strengths:**
-    - **Critical Gaps:**
-    - **Cognitive Bias (if any):**
-    - **Professional Pearl:**
-    - **Well-being Tip:**
+    ### 🧘 Well-being Tip
+    (Brief advice based on their stress level and performance)
     
     English only.
     """
-    
     try:
         response = model.generate_content(prompt)
         return response.text
     except Exception as e:
-        return f"AI Mentor is currently offline (Error: {str(e)}). Please review the Gold Standard Answer."
+        return f"🚨 AI Mentor is currently offline (Error: {str(e)}). Please review the Gold Standard Answer manually."
 
 # ===================== 4. DATA LOADING =====================
 @st.cache_data
@@ -436,7 +430,21 @@ elif menu == "🧪 Clinical Simulator":
             if stress_level > 8:
                 st.warning("⚠️ High stress detected. Take a deep breath before final submission.")
 
-            # --- SUBMIT LOGIC (Full Optimized Version) ---
+           # --- SUBMIT LOGIC (ตรวจสอบจุดเชื่อมโยง) ---
+           if st.button("🚀 SUBMIT CLINICAL DECISION"):
+               if dx_in and re_in:
+                with st.spinner("Analyzing Reasoning Map..."):
+                    # ดึงค่าจาก Tab 2 (Reasoning Map) ที่เราเซฟไว้ใน session_state
+                    map_data = f"Pos: {st.session_state.map_pos} | Neg: {st.session_state.map_neg}"
+                    
+                    # ส่งค่าเข้า AI
+                    ai_response = get_ai_feedback_v9_5(
+                        user_dx=dx_in,
+                        user_re=f"{re_in} | SBAR: {h_s}/{h_b}/{h_a}/{h_r}",
+                        user_map=map_data, # <--- ส่ง map เข้าไปด้วย
+                        target=c.get('answer'),
+                        role=profession,
+                time_taken=elapsed
             if st.button("🚀 SUBMIT CLINICAL DECISION"):
                 if dx_in and re_in:
                     with st.spinner("⚕️ AI Mentor is evaluating your reasoning..."):
@@ -623,18 +631,7 @@ elif menu == "🏆 Analytics Hub":
     else: 
         # กรณีรันครั้งแรกแล้วยังไม่มีไฟล์ .csv
         st.info("🚀 Welcome to FTF-CRA! No simulation data found. Start your first clinical case to activate the dashboard.")
-    if existing_cols:
-        st.subheader("🕸️ Competency Radar")
-        avg_values = df[existing_cols].mean().tolist()
-        
-        fig = go.Figure(data=go.Scatterpolar(
-          r=avg_values + [avg_values[0]], # ปิดวงกลม
-          theta=existing_cols + [existing_cols[0]],
-          fill='toself',
-          line_color='#1976D2'
-        ))
-        fig.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 10])))
-        st.plotly_chart(fig, use_container_width=True)
+
 
 # --- ⚠️ สำคัญ: ลบโค้ดที่ซ้ำซ้อนหรือหลุดอยู่ล่างสุดของไฟล์ทิ้ง ---
 # ตรวจสอบว่าไม่มีบรรทัด 'existing_cols = ...' หลุดอยู่นอกแนว (Indentation) ของ elif นะครับ
