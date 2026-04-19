@@ -447,6 +447,10 @@ elif menu == "🧪 Clinical Simulator":
             if st.button("🚀 SUBMIT CLINICAL DECISION"):
                 if dx_in and re_in:
                     with st.spinner("⚕️ AI Mentor is analyzing your reasoning process..."):
+                        # ✅ แก้ไข: ดึงค่าจาก session_state มาใส่ตัวแปร f_thought ก่อน
+                        # ถ้าผู้ใช้ไม่ได้พิมพ์อะไรเลย ให้ใช้คำว่า "Not recorded" แทน
+                        f_thought = st.session_state.get('first_thought', 'Not recorded')
+                        user_map = f"Positives: {st.session_state.get('map_pos', '')}, Negatives: {st.session_state.get('map_neg', '')}"
                             # 1. รวบรวม Data Synthesis จาก Reasoning Map (Tab 2)
                             user_map = f"Positives: {st.session_state.get('map_pos', '')}, Negatives: {st.session_state.get('map_neg', '')}"
                             
