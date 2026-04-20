@@ -376,7 +376,7 @@ elif menu == "🧪 Clinical Simulator":
             pos_f = cm_col1.text_area("Pertinent Positives (+)", placeholder="Supporting findings...", height=150, key="map_pos")
             neg_f = cm_col2.text_area("Pertinent Negatives (-)", placeholder="Absent findings...", height=150, key="map_neg")
 
-      with t3:
+        with t3:
             st.markdown(f"### 🧬 Professional Entry: {profession.upper()}")
             
             # --- Analysis Phase Header ---
