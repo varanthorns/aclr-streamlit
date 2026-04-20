@@ -376,7 +376,7 @@ elif menu == "🧪 Clinical Simulator":
             pos_f = cm_col1.text_area("Pertinent Positives (+)", placeholder="Supporting findings...", height=150, key="map_pos")
             neg_f = cm_col2.text_area("Pertinent Negatives (-)", placeholder="Absent findings...", height=150, key="map_neg")
 
-        with t3:
+      with t3:
             st.markdown(f"### 🧬 Professional Entry: {profession.upper()}")
             
             # --- Analysis Phase Header ---
@@ -387,75 +387,59 @@ elif menu == "🧪 Clinical Simulator":
                 </div>
             """, unsafe_allow_html=True)
 
-            # 1. Final Diagnosis (นี่คือตัวที่จะไปเทียบกับ First Thought)
+            # 1. Final Diagnosis
             dx_in = st.text_input("🩺 Final Assessment / Diagnosis", key="entry_dx", placeholder="สรุปการวินิจฉัยสุดท้ายของคุณที่นี่...")
             
             st.divider()
 
-            # 2. Dynamic Professional Fields (เปลี่ยนตามอาชีพ)
+            # 2. Dynamic Professional Fields
             st.markdown("#### 🛠️ Specialized Clinical Actions")
             role_info = ""
-            
             if profession == "doctor":
                 ddx = st.multiselect("🔍 Differential Diagnosis (DDx)", ["Sepsis", "MI", "Stroke", "IE", "Pneumonia", "Heart Failure", "PE"], key="doc_ddx")
                 plan = st.text_input("💊 Immediate Intervention Plan", key="doc_plan")
                 role_info = f"DDx: {ddx}, Plan: {plan}"
-            
             elif profession == "pharmacy":
                 dosing = st.text_input("⚖️ Pharmacokinetic/Dosing Logic", key="pharma_dosing")
                 interaction = st.text_input("⚠️ Drug-Drug Interactions (DDI)", key="pharma_interact")
                 role_info = f"Dosing: {dosing}, Interaction: {interaction}"
-            
             elif profession == "nursing":
                 vitals_focus = st.multiselect("📉 Critical Vitals to Monitor", ["BP", "SpO2", "Temp", "GCS", "MAP", "Urine Output"], key="nurse_vitals")
                 n_care = st.text_input("🛌 Immediate Nursing Intervention", key="nurse_care")
                 role_info = f"Vitals Focus: {vitals_focus}, Care Plan: {n_care}"
-            
             elif profession == "ams":
                 validity = st.selectbox("🔬 Specimen Validity/Quality", ["Optimal", "Hemolyzed", "Clotted", "Inadequate Volume"], key="ams_valid")
                 lab_interp = st.text_area("🧪 Advanced Lab Interpretation", key="ams_lab")
                 role_info = f"Validity: {validity}, Lab Interp: {lab_interp}"
-            
-            elif profession == "dentistry":
-                oral_site = st.text_input("🦷 Odontogenic Source / Site", key="dent_site")
-                procedure = st.text_input("💉 Dental Procedure/Management", key="dent_proc")
-                role_info = f"Site: {oral_site}, Procedure: {procedure}"
-            
-            elif profession == "vet":
-                species = st.text_input("🐾 Species Specific Considerations", key="vet_species")
-                zoonotic = st.selectbox("☣️ Zoonotic Potential", ["Low", "Moderate", "High", "Critical"], key="vet_zoo")
-                role_info = f"Species: {species}, Zoonotic: {zoonotic}"
-            
-            elif profession == "public health":
-                epi_risk = st.text_input("🌏 Epidemiological Risk Factors", key="ph_epi")
-                prevention = st.text_area("🛡️ Population-level Prevention", key="ph_prev")
-                role_info = f"Epi Risk: {epi_risk}, Prevention: {prevention}"
+            # ... (เพิ่มอาชีพอื่นๆ ได้ตามต้องการในรูปแบบเดียวกัน)
 
-            # 3. Rationale & SBAR
+            # 3. Pathophysiology & SBAR
             st.divider()
-            re_in = st.text_area("✍️ Pathophysiological Rationale", height=120, key="entry_re", placeholder="อธิบายเหตุผลทางพยาธิสรีรวิทยาที่สนับสนุนการวินิจฉัยของคุณ...")
+            re_in = st.text_area("✍️ Pathophysiological Rationale", height=120, key="entry_re", placeholder="อธิบายเหตุผลทางพยาธิสรีรวิทยา...")
             
             with st.expander("🗣️ SBAR Handover (Bonus Points)"):
-                h_s = st.text_input("Situation", key="sbar_s")
-                h_b = st.text_input("Background", key="sbar_b")
-                h_a = st.text_area("Assessment", key="sbar_a")
-                h_r = st.text_area("Recommendation", key="sbar_r")
+                h_s = st.text_input("Situation", key="sbar_s_new")
+                h_b = st.text_input("Background", key="sbar_b_new")
+                h_a = st.text_area("Assessment", key="sbar_a_new")
+                h_r = st.text_area("Recommendation", key="sbar_r_new")
 
-            # 4. Decision Metrics
+            # 4. Metrics & Reflection
             st.markdown("#### 📊 Clinical Decision Metrics")
             c_p1, c_p2 = st.columns(2)
-            u_step = c_p1.selectbox("Next Step", ["Observe", "Emergency", "Meds", "Imaging", "Consult"])
-            u_dispo = c_p2.selectbox("Disposition", ["ICU/CCU", "General Ward", "Discharge"])
+            u_step = c_p1.selectbox("Next Step", ["Observe", "Emergency", "Meds", "Imaging", "Consult"], key="u_step")
+            u_dispo = c_p2.selectbox("Disposition", ["ICU/CCU", "General Ward", "Discharge"], key="u_dispo")
+            u_conf = st.slider("Confidence (%)", 0, 100, 80, key="u_conf")
             
-            u_conf = st.slider("Confidence (%)", 0, 100, 80)
-            stress_level = st.slider("😓 Stress Level (0-10)", 0, 10, 5)
+            st.markdown("### 🧘 Reflection")
+            stress_level = st.slider("😓 Stress Level (0-10)", 0, 10, 5, key="u_stress")
+            if stress_level > 8:
+                st.warning("⚠️ High stress detected. Consider taking a short break.")
 
-            # --- SUBMIT LOGIC ---
+            # --- 🚀 SINGLE SUBMIT LOGIC ---
             st.divider()
-            if st.button("🚀 SUBMIT CLINICAL DECISION"):
+            if st.button("🚀 SUBMIT CLINICAL DECISION", key="final_submit_btn"):
                 if dx_in and re_in:
                     with st.spinner("⚕️ AI Mentor is analyzing your reasoning process..."):
-                        # ดึงค่าเพื่อส่งให้ AI
                         f_thought = st.session_state.get('first_thought', 'Not recorded')
                         user_map = f"Positives: {st.session_state.get('map_pos', '')}, Negatives: {st.session_state.get('map_neg', '')}"
                         
@@ -472,14 +456,11 @@ elif menu == "🧪 Clinical Simulator":
                         )
                         
                         st.session_state.ai_feedback = ai_response
-                        
-                        # คำนวณคะแนนพื้นฐาน
                         target_ans_str = str(c.get('answer')).lower()
                         score = 10 if dx_in.lower() in target_ans_str else 5
                         
                         competency = {
-                            "Diagnosis": score,
-                            "Reasoning": 8, 
+                            "Diagnosis": score, "Reasoning": 8, 
                             "SBAR": 10 if all([h_s, h_b, h_a, h_r]) else 5,
                             "Safety": 10 if u_dispo == "ICU/CCU" else 7
                         }
